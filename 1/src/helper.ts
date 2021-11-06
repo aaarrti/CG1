@@ -124,7 +124,7 @@ export class KeyBoardInputHandler {
 
     activeNode: THREE.Object3D;
 
-    constructor(obj: THREE.Object3D) {
+    constructor(obj: THREE.Scene) {
         this.activeNode = obj
     }
 
@@ -206,8 +206,25 @@ export class KeyBoardInputHandler {
                 this.activeNode = right_sibling
                 break
             case 'c':
+                if (this.activeNode.type != 'Mesh'){
+                    break
+                }
+                if (this.activeNode.children.filter(i => i.type === 'AxesHelper').length === 0){
+                    // add axes
+                    let ax = new THREE.AxesHelper(0.5)
+                    ax.matrixWorld.multiplyMatrices(this.activeNode.matrixWorld, ax.matrix)
+                    this.activeNode.add(ax)
+                }else{
+                    // remove axes
+                    this.activeNode.remove(
+                        this.activeNode.children.filter(i => i.type === 'AxesHelper')[0]
+                    )
+                }
+                break
 
         }
+
+
 
 
     }
