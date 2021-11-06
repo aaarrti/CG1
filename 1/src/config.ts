@@ -1,0 +1,9 @@
+export const RADIUS = 0.05;
+export const BODY_LEN = 0.35;
+export const JOINT_LEN = 0.11;
+export const NECK_LEN = 0.3;
+export const SHOULDER_LEN = 0.25;
+export const ARM_LEN = 0.25;
+export const TIGHT_LEN = 0.35;
+export const LEG_LEN = 0.25;
+export const Y_OFFSET = 0.1
