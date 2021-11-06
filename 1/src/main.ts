@@ -6,6 +6,7 @@ import RenderWidget from './lib/rendererWidget';
 import { Application, createWindow, Window } from './lib/window';
 
 import * as helper from './helper';
+import {KeyBoardInputHandler} from "./helper";
 // put your imports here
 
 /*******************************************************************************
@@ -54,6 +55,9 @@ function main(){
     // create controls
     controls = new OrbitControls(camera, rendererDiv);
     helper.setupControls(controls);
+
+    KeyBoardInputHandler.activeNode = scene;
+    document.addEventListener('keydown', KeyBoardInputHandler.handleKeyboard)
 
     // fill the renderDiv. In RenderWidget happens all the magic.
     // It handles resizes, adds the fps widget and most important defines the main animate loop.

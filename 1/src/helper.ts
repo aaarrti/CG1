@@ -2,7 +2,6 @@ import * as THREE from 'three';
 
 import type {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 import {
-    DISTANCE,
     JOINT_LEN,
     NECK_LEN,
     RADIUS,
@@ -13,6 +12,7 @@ import {
     TIGHT_LEN,
     Y_OFFSET
 } from "./config";
+import {Color, MeshBasicMaterial} from "three";
 
 export enum Shape {
     box = "Box",
@@ -77,7 +77,7 @@ export function logMatrixes(name: string, obj: THREE.Object3D) {
 
 
 function addObject(scene: THREE.Object3D, color: string, geometry: THREE.BufferGeometry, x: number, y: number, z: number): THREE.Object3D {
-    const material = new THREE.MeshPhongMaterial({color: color});
+    const material = new THREE.MeshBasicMaterial({color: color});
     const mesh = new THREE.Mesh(geometry, material);
     const matrix = new THREE.Matrix4();
     matrix.set(
@@ -106,16 +106,103 @@ export function constructSkeleton(scene: THREE.Scene): void {
     let body = addBody(scene, 'blue', 0, Y_OFFSET)
     let head_geometry = new THREE.SphereGeometry(1.5 * RADIUS, 30, 30)
     let head = addObject(body, 'blue', head_geometry, 0, NECK_LEN + Y_OFFSET, 0)
-    let leftShoulder = addSphere(body,  'red', -JOINT_LEN, BODY_LEN/2 - JOINT_LEN/2 + Y_OFFSET)
-    let rightShoulder = addSphere(body, 'red', JOINT_LEN, BODY_LEN/2 - JOINT_LEN/2 + Y_OFFSET)
-    let leftElbow = addSphere(leftShoulder, 'green', -SHOULDER_LEN, Y_OFFSET)
-    let leftHand = addSphere(leftElbow, 'yellow', -SHOULDER_LEN, -ARM_LEN/2 + Y_OFFSET, ARM_LEN/2)
-    let rightElbow = addSphere(rightShoulder, 'green', SHOULDER_LEN, Y_OFFSET)
-    let rightHand = addSphere(rightElbow, 'yellow', SHOULDER_LEN, -ARM_LEN/2)
-    let leftHip = addSphere(body, 'red', -JOINT_LEN, -BODY_LEN/2 + Y_OFFSET)
-    let rightHip = addSphere(body, 'red', JOINT_LEN, -BODY_LEN/2 + Y_OFFSET)
-    let leftKnee = addSphere(leftHip, 'green', -JOINT_LEN, -TIGHT_LEN + Y_OFFSET)
-    let leftFoot = addSphere(leftKnee, 'yellow', -JOINT_LEN, -LEG_LEN- TIGHT_LEN + Y_OFFSET)
-    let rightKnee = addSphere(rightHip, 'green', JOINT_LEN, -TIGHT_LEN + Y_OFFSET, JOINT_LEN)
-    let rightFoot = addSphere(rightKnee, 'yellow', JOINT_LEN, -LEG_LEN- TIGHT_LEN + Y_OFFSET, 1.5*JOINT_LEN)
+    let leftShoulder = addSphere(body, 'blue', -JOINT_LEN, BODY_LEN / 2 - JOINT_LEN / 2 + Y_OFFSET)
+    let rightShoulder = addSphere(body, 'blue', JOINT_LEN, BODY_LEN / 2 - JOINT_LEN / 2 + Y_OFFSET)
+    let leftElbow = addSphere(leftShoulder, 'blue', -SHOULDER_LEN, Y_OFFSET)
+    let leftHand = addSphere(leftElbow, 'blue', -SHOULDER_LEN, -ARM_LEN / 2 + Y_OFFSET, ARM_LEN / 2)
+    let rightElbow = addSphere(rightShoulder, 'blue', SHOULDER_LEN, Y_OFFSET)
+    let rightHand = addSphere(rightElbow, 'blue', SHOULDER_LEN, -ARM_LEN / 2)
+    let leftHip = addSphere(body, 'blue', -JOINT_LEN, -BODY_LEN / 2 + Y_OFFSET)
+    let rightHip = addSphere(body, 'blue', JOINT_LEN, -BODY_LEN / 2 + Y_OFFSET)
+    let leftKnee = addSphere(leftHip, 'blue', -JOINT_LEN, -TIGHT_LEN + Y_OFFSET)
+    let leftFoot = addSphere(leftKnee, 'blue', -JOINT_LEN, -LEG_LEN - TIGHT_LEN + Y_OFFSET)
+    let rightKnee = addSphere(rightHip, 'blue', JOINT_LEN, -TIGHT_LEN + Y_OFFSET, JOINT_LEN)
+    let rightFoot = addSphere(rightKnee, 'blue', JOINT_LEN, -LEG_LEN - TIGHT_LEN + Y_OFFSET, 1.5 * JOINT_LEN)
+}
+
+export class KeyBoardInputHandler {
+
+    static activeNode: THREE.Object3D;
+
+
+    static resetColor(){
+        if (KeyBoardInputHandler.activeNode.type === 'Mesh'){
+            // reset color
+            ((KeyBoardInputHandler.activeNode as THREE.Mesh)
+                .material as MeshBasicMaterial).color = new Color('blue')
+        }
+    }
+
+    static setColor(obj: THREE.Object3D<THREE.Event>){
+        if (obj.type === 'Mesh') {
+            ((obj as THREE.Mesh)
+                .material as MeshBasicMaterial)
+                .color = new Color('red')
+        }
+    }
+
+    static handleKeyboard(event: KeyboardEvent) {
+
+        switch (event.key) {
+            case 'w':
+                const parent = KeyBoardInputHandler.activeNode.parent;
+                if (parent === null){
+                    return;
+                }
+                KeyBoardInputHandler.resetColor()
+                if (parent?.type === 'Mesh') {
+                    KeyBoardInputHandler.setColor(parent)
+                }
+                KeyBoardInputHandler.activeNode = parent
+                break
+            case 's':
+                const meshChildren = KeyBoardInputHandler.activeNode.children.filter(i => i.type == 'Mesh')
+                if (meshChildren.length === 0){
+                    return;
+                }
+                KeyBoardInputHandler.resetColor()
+                const child = meshChildren[0] as THREE.Mesh
+                (child.material as MeshBasicMaterial).color = new Color('red')
+                KeyBoardInputHandler.activeNode = meshChildren[0]
+                break
+            case 'a':
+                const parent_s = KeyBoardInputHandler.activeNode.parent;
+                if (parent_s === null){
+                    return;
+                }
+                const mesh_siblings_l = parent_s.children.filter(i => i.type === 'Mesh').filter(i => i !== KeyBoardInputHandler.activeNode)
+                if (mesh_siblings_l.length === 0){
+                    return;
+                }
+                const curr_index_l = parent_s.children.indexOf(KeyBoardInputHandler.activeNode)
+                if(curr_index_l === 0){
+                    return;
+                }
+                const left_sibling = parent_s.children[curr_index_l - 1];
+                KeyBoardInputHandler.resetColor()
+                KeyBoardInputHandler.setColor(left_sibling)
+                KeyBoardInputHandler.activeNode = left_sibling
+                break
+            case 'd':
+                const parent_r = KeyBoardInputHandler.activeNode.parent;
+                if (parent_r === null){
+                    return;
+                }
+                const mesh_siblings = parent_r.children.filter(i => i.type === 'Mesh').filter(i => i !== KeyBoardInputHandler.activeNode)
+                if (mesh_siblings.length === 0){
+                    return;
+                }
+                const curr_index_r = parent_r.children.indexOf(KeyBoardInputHandler.activeNode)
+                if (parent_r.children.length === curr_index_r + 1){
+                    return;
+                }
+                const right_sibling = parent_r.children[curr_index_r + 1];
+                KeyBoardInputHandler.resetColor()
+                KeyBoardInputHandler.setColor(right_sibling)
+                KeyBoardInputHandler.activeNode = right_sibling
+                break
+
+        }
+
+    }
 }
