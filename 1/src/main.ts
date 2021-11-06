@@ -56,8 +56,8 @@ function main(){
     controls = new OrbitControls(camera, rendererDiv);
     helper.setupControls(controls);
 
-    KeyBoardInputHandler.activeNode = scene;
-    document.addEventListener('keydown', KeyBoardInputHandler.handleKeyboard)
+    let habler = new KeyBoardInputHandler(scene);
+    document.addEventListener('keydown', event => habler.handleKeyboard(event));
 
     // fill the renderDiv. In RenderWidget happens all the magic.
     // It handles resizes, adds the fps widget and most important defines the main animate loop.

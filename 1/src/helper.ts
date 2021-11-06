@@ -122,18 +122,22 @@ export function constructSkeleton(scene: THREE.Scene): void {
 
 export class KeyBoardInputHandler {
 
-    static activeNode: THREE.Object3D;
+    activeNode: THREE.Object3D;
+
+    constructor(obj: THREE.Object3D) {
+        this.activeNode = obj
+    }
 
 
-    static resetColor(){
-        if (KeyBoardInputHandler.activeNode.type === 'Mesh'){
+    private resetColor(){
+        if (this.activeNode.type === 'Mesh'){
             // reset color
-            ((KeyBoardInputHandler.activeNode as THREE.Mesh)
+            ((this.activeNode as THREE.Mesh)
                 .material as MeshBasicMaterial).color = new Color('blue')
         }
     }
 
-    static setColor(obj: THREE.Object3D<THREE.Event>){
+    private static setColor(obj: THREE.Object3D<THREE.Event>){
         if (obj.type === 'Mesh') {
             ((obj as THREE.Mesh)
                 .material as MeshBasicMaterial)
@@ -141,68 +145,70 @@ export class KeyBoardInputHandler {
         }
     }
 
-    static handleKeyboard(event: KeyboardEvent) {
+    public handleKeyboard(event: KeyboardEvent) {
 
         switch (event.key) {
             case 'w':
-                const parent = KeyBoardInputHandler.activeNode.parent;
+                const parent = this.activeNode.parent;
                 if (parent === null){
                     return;
                 }
-                KeyBoardInputHandler.resetColor()
+                this.resetColor()
                 if (parent?.type === 'Mesh') {
                     KeyBoardInputHandler.setColor(parent)
                 }
-                KeyBoardInputHandler.activeNode = parent
+                this.activeNode = parent
                 break
             case 's':
-                const meshChildren = KeyBoardInputHandler.activeNode.children.filter(i => i.type == 'Mesh')
+                const meshChildren = this.activeNode.children.filter(i => i.type == 'Mesh')
                 if (meshChildren.length === 0){
                     return;
                 }
-                KeyBoardInputHandler.resetColor()
+                this.resetColor()
                 const child = meshChildren[0] as THREE.Mesh
                 (child.material as MeshBasicMaterial).color = new Color('red')
-                KeyBoardInputHandler.activeNode = meshChildren[0]
+                this.activeNode = meshChildren[0]
                 break
             case 'a':
-                const parent_s = KeyBoardInputHandler.activeNode.parent;
+                const parent_s = this.activeNode.parent;
                 if (parent_s === null){
                     return;
                 }
-                const mesh_siblings_l = parent_s.children.filter(i => i.type === 'Mesh').filter(i => i !== KeyBoardInputHandler.activeNode)
+                const mesh_siblings_l = parent_s.children.filter(i => i.type === 'Mesh').filter(i => i !== this.activeNode)
                 if (mesh_siblings_l.length === 0){
                     return;
                 }
-                const curr_index_l = parent_s.children.indexOf(KeyBoardInputHandler.activeNode)
+                const curr_index_l = parent_s.children.indexOf(this.activeNode)
                 if(curr_index_l === 0){
                     return;
                 }
                 const left_sibling = parent_s.children[curr_index_l - 1];
-                KeyBoardInputHandler.resetColor()
+                this.resetColor()
                 KeyBoardInputHandler.setColor(left_sibling)
-                KeyBoardInputHandler.activeNode = left_sibling
+                this.activeNode = left_sibling
                 break
             case 'd':
-                const parent_r = KeyBoardInputHandler.activeNode.parent;
+                const parent_r = this.activeNode.parent;
                 if (parent_r === null){
                     return;
                 }
-                const mesh_siblings = parent_r.children.filter(i => i.type === 'Mesh').filter(i => i !== KeyBoardInputHandler.activeNode)
+                const mesh_siblings = parent_r.children.filter(i => i.type === 'Mesh').filter(i => i !== this.activeNode)
                 if (mesh_siblings.length === 0){
                     return;
                 }
-                const curr_index_r = parent_r.children.indexOf(KeyBoardInputHandler.activeNode)
+                const curr_index_r = parent_r.children.indexOf(this.activeNode)
                 if (parent_r.children.length === curr_index_r + 1){
                     return;
                 }
                 const right_sibling = parent_r.children[curr_index_r + 1];
-                KeyBoardInputHandler.resetColor()
+                this.resetColor()
                 KeyBoardInputHandler.setColor(right_sibling)
-                KeyBoardInputHandler.activeNode = right_sibling
+                this.activeNode = right_sibling
                 break
+            case 'c':
 
         }
+
 
     }
 }
