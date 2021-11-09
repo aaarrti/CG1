@@ -226,9 +226,14 @@ export class KeyBoardInputHandler {
                 applyTransformation(this.activeNode, ml)
                 break
             case 'ArrowUp':
-
+                let mu = rotateOnXMatrix(degToRad(30))
+                console.log(`Matrix of rotate on X up is =` + matrixToString(mu))
+                applyTransformation(this.activeNode, mu)
                 break
             case 'ArrowDown':
+                let md = rotateOnXMatrix(degToRad(-30))
+                console.log(`Matrix of rotate on X dwon is =` + matrixToString(md))
+                applyTransformation(this.activeNode, md)
                 break
 
         }
@@ -240,7 +245,12 @@ export class KeyBoardInputHandler {
 // applies M to node and all its children
 function applyTransformation(node: THREE.Object3D, M: Matrix4){
     node.matrixWorld.multiply(M)
-    node.children.forEach( i => i.matrixWorld.multiply(M))
+    node.children.forEach(child => applyTransformationRecursiveStep(child, node.matrixWorld))
+}
+
+function applyTransformationRecursiveStep(node: Object3D, parentMW: Matrix4){
+    node.matrixWorld.multiplyMatrices(parentMW, node.matrix)
+    node.children.forEach(i => applyTransformationRecursiveStep(i, node.matrixWorld))
 }
 
 
