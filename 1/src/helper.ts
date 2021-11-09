@@ -1,24 +1,9 @@
 import * as THREE from 'three';
 
 import type {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
-import {
-    JOINT_LEN,
-    NECK_LEN,
-    RADIUS,
-    BODY_LEN,
-    SHOULDER_LEN,
-    ARM_LEN,
-    LEG_LEN,
-    TIGHT_LEN,
-    Y_OFFSET
-} from "./config";
-import {Color, Matrix4, MeshBasicMaterial} from "three";
+import {Color, Matrix4, MeshBasicMaterial, Object3D} from "three";
 import {degToRad} from "./lib/utils";
-
-export enum Shape {
-    box = "Box",
-    sphere = "Sphere",
-}
+import {BODY_LEN, NECK_LEN, RADIUS, SHOULDER_LEN, Y_OFFSET} from "./config";
 
 export function setupLight(scene: THREE.Scene) {
     // add two point lights and a basic ambient light
@@ -63,60 +48,8 @@ export function setupControls(controls: OrbitControls) {
     return controls;
 }
 
-let xSize = 4;
-let ySize = 8;
-let zSize = 5;
 
-
-function mapTo3D(i : number) {
-    let z = Math.floor(i / (xSize * ySize));
-    i -= z * xSize * ySize;
-    let y = Math.floor(i / xSize);
-    let x = i % xSize;
-    return { x: x, y: y, z: z };
-}
-
-function mapFrom3D(x : number, y : number, z : number) {
-    return x + y * xSize + z * xSize * ySize;
-}
-
-
-function addGrid(scene: THREE.Scene){
-    let n = xSize * ySize * zSize;
-    let geometry = new THREE.BufferGeometry();
-
-    let positions = [];
-    for (let i = 0; i < n; i++) {
-        let p = mapTo3D(i);
-        positions.push((p.x - xSize / 2) / xSize);
-        positions.push((p.y - ySize / 2) / ySize);
-        positions.push((p.z - zSize / 2) / zSize);
-    }
-    let positionAttribute = new THREE.Float32BufferAttribute(positions, 3);
-    geometry.addAttribute("position", positionAttribute);
-
-    let indexPairs = [];
-    for (let i = 0; i < n; i++) {
-        let p = mapTo3D(i);
-        if (p.x + 1 < xSize) {
-            indexPairs.push(i);
-            indexPairs.push(mapFrom3D(p.x + 1, p.y, p.z));
-        }
-        if (p.y + 1 < ySize) {
-            indexPairs.push(i);
-            indexPairs.push(mapFrom3D(p.x, p.y + 1, p.z));
-        }
-        if (p.z + 1 < zSize) {
-            indexPairs.push(i);
-            indexPairs.push(mapFrom3D(p.x, p.y, p.z + 1));
-        }
-    }
-    geometry.setIndex(indexPairs);
-    let lines = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial());
-    scene.add(lines);
-}
-
-export function matrixToString(matrix: THREE.Matrix4): string {
+function matrixToString(matrix: THREE.Matrix4): string {
     const arr = matrix.toArray()
     return `\n[ ${arr[0]},${arr[4]},${arr[8]},${arr[12]}\n` +
         `  ${arr[1]},${arr[5]},${arr[9]},${arr[13]}\n` +
@@ -130,56 +63,52 @@ export function logMatrixes(name: string, obj: THREE.Object3D) {
 }
 
 
-function addObject(scene: THREE.Object3D, color: string, geometry: THREE.BufferGeometry, x: number, y: number, z: number): THREE.Object3D {
+function addObject(scene: THREE.Object3D, color: string, geometry: THREE.BufferGeometry, m: Matrix4): THREE.Object3D {
     const material = new THREE.MeshPhysicalMaterial({color: color});
     const mesh = new THREE.Mesh(geometry, material);
-    const matrix = new THREE.Matrix4();
-    matrix.set(
-        1, 0, 0, x,
-        0, 1, 0, y,
-        0, 0, 1, z,
-        0, 0, 0, 1
-    )
-    mesh.matrix.copy(new THREE.Matrix4().identity())
-    mesh.matrixWorld.copy(matrix)
+    mesh.matrix.copy(m)
+    mesh.matrixWorld.copy(computeWorldMatrix(mesh))
     logMatrixes(color, mesh)
     color.localeCompare('Matrix')
     scene.add(mesh);
     return mesh
 }
 
-function addSphere(obj: THREE.Object3D, color: string, x: number = 0, y: number = 0, z: number = 0): THREE.Object3D {
-    return addObject(obj, color, new THREE.SphereGeometry(RADIUS, 30, 30), x, y, z)
+
+// use to caclulate matrixWorld of Node
+function chainParentsMatrices(node: THREE.Object3D) : THREE.Matrix4 {
+    if (node.parent === null){
+        return node.matrix
+    }
+    return chainParentsMatrices(node.parent).multiply(node.matrix)
 }
 
-function addBlock(scene: THREE.Object3D, color: string, x: number = 0, y: number = 0, z: number = 0): THREE.Object3D {
-    return addObject(scene, color, new THREE.BoxGeometry(BODY_LEN / 2, BODY_LEN, BODY_LEN / 4), x, y, z)
+// M - local tranformation Matrix
+function computeWorldMatrix(node: THREE.Object3D) : THREE.Matrix4 {
+    return chainParentsMatrices(node).multiply(node.matrix)
 }
 
-function addBlock_(scene: THREE.Object3D, color: string, h: number, w : number, d : number, x: number = 0, y: number = 0, z: number = 0){
-    return addObject(scene, color, new THREE.BoxGeometry(w, h, d), x, y, z)
+function linearTranslationMatrix(x: number, y: number, z: number){
+    let m = new Matrix4()
+    m.set(
+        1, 0, 0, x,
+        0, 1, 0, y,
+        0, 0, 1, z,
+        0, 0, 0, 1
+    )
+    return m
 }
 
-export function constructSkeleton(scene: THREE.Scene): void {
-    //let grid = new THREE.GridHelper(5, 10);
-    //scene.add(grid)
-    //addGrid(scene)
-    let body = addBlock(scene, 'blue', 0, Y_OFFSET)
-    let head_geometry = new THREE.SphereGeometry(1.5 * RADIUS, 30, 30)
-    let neck = addBlock_(body, 'blue', 0.1, 0.05, 0.05, 0.1, 0.1, 0.1)
-    let head = addObject(neck, 'blue', head_geometry, 0, NECK_LEN + Y_OFFSET, 0)
-    let leftShoulder = addSphere(body, 'blue', -JOINT_LEN, BODY_LEN / 2 - JOINT_LEN / 2 + Y_OFFSET)
-    let rightShoulder = addSphere(body, 'blue', JOINT_LEN, BODY_LEN / 2 - JOINT_LEN / 2 + Y_OFFSET)
-    let leftElbow = addSphere(leftShoulder, 'blue', -SHOULDER_LEN, Y_OFFSET)
-    let leftHand = addSphere(leftElbow, 'blue', -SHOULDER_LEN, -ARM_LEN / 2 + Y_OFFSET, ARM_LEN / 2)
-    let rightElbow = addSphere(rightShoulder, 'blue', SHOULDER_LEN, Y_OFFSET)
-    let rightHand = addSphere(rightElbow, 'blue', SHOULDER_LEN, -ARM_LEN / 2)
-    let leftHip = addSphere(body, 'blue', -JOINT_LEN, -BODY_LEN / 2 + Y_OFFSET)
-    let rightHip = addSphere(body, 'blue', JOINT_LEN, -BODY_LEN / 2 + Y_OFFSET)
-    let leftKnee = addSphere(leftHip, 'blue', -JOINT_LEN, -TIGHT_LEN + Y_OFFSET)
-    let leftFoot = addSphere(leftKnee, 'blue', -JOINT_LEN, -LEG_LEN - TIGHT_LEN + Y_OFFSET)
-    let rightKnee = addSphere(rightHip, 'blue', JOINT_LEN, -TIGHT_LEN + Y_OFFSET, JOINT_LEN)
-    let rightFoot = addSphere(rightKnee, 'blue', JOINT_LEN, -LEG_LEN - TIGHT_LEN + Y_OFFSET, 1.5 * JOINT_LEN)
+
+export function constructRobot(scene: THREE.Scene): void {
+    let body_geometry = new THREE.BoxGeometry(0.2, 0.5, 0.1)
+    let body = addObject(scene, 'blue', body_geometry, new Matrix4().identity())
+    let head_geometry = new THREE.SphereGeometry(0.1, 30, 30)
+    let head = addObject(body, 'blue', head_geometry, linearTranslationMatrix(0, 0.2, 0))
+    let arm_geometry = new THREE.BoxGeometry(0.05, 0.25, 0.05)
+    let arm = addObject(body, 'blue', arm_geometry,
+        linearTranslationMatrix(- 0.05, 0.15, 0).multiply(rotateOnZMatrix(-5))
+    )
 }
 
 export class KeyBoardInputHandler {
@@ -287,64 +216,67 @@ export class KeyBoardInputHandler {
                 }
                 break
             case 'ArrowRight':
-                let mr = KeyBoardInputHandler.rotateOnYMatrix(degToRad(30))
-                this.activeNode.matrix.multiplyMatrices(mr, this.activeNode.matrix)
-                this.activeNode.matrixWorld.multiplyMatrices(this.activeNode.matrixWorld, this.activeNode.matrix)
+                let mr = rotateOnYMatrix(degToRad(30))
+                console.log(`Matrix of rotate on Y right is =` + matrixToString(mr))
+                applyTransformation(this.activeNode, mr)
                 break
             case 'ArrowLeft':
-                let ml = KeyBoardInputHandler.rotateOnYMatrix(degToRad(-30))
-                this.activeNode.matrix.multiplyMatrices(ml, this.activeNode.matrix)
-                this.activeNode.matrixWorld.multiplyMatrices(this.activeNode.matrixWorld, this.activeNode.matrix)
+                let ml = rotateOnYMatrix(degToRad(-30))
+                console.log(`Matrix of rotate on Y left is =` + matrixToString(ml))
+                applyTransformation(this.activeNode, ml)
                 break
             case 'ArrowUp':
-                let mu = KeyBoardInputHandler.rotateOnXMatrix(degToRad(-30))
-                this.activeNode.matrix.multiplyMatrices(mu, this.activeNode.matrix)
-                this.activeNode.matrixWorld.multiplyMatrices(this.activeNode.matrixWorld, this.activeNode.matrix)
+
                 break
             case 'ArrowDown':
-                let md = KeyBoardInputHandler.rotateOnXMatrix(degToRad(30))
-                this.activeNode.matrix.multiplyMatrices(md, this.activeNode.matrix)
-                this.activeNode.matrixWorld.multiplyMatrices(this.activeNode.matrixWorld, this.activeNode.matrix)
                 break
 
         }
 
     }
 
-    // refernce https://learnopengl.com/Getting-started/Transformations
-    // x in radians
-    private static rotateOnXMatrix(x: number): Matrix4 {
-        let m = new Matrix4()
-        m.set(
-            1, 0, 0, 0,
-            0, Math.cos(x), -Math.sin(x), 0,
-            0, Math.sin(x), Math.cos(x), 0,
-            0, 0, 0, 1
-        )
-        return m
-    }
+}
 
-    private static rotateOnYMatrix(y: number): Matrix4 {
-        let m = new Matrix4()
-        m.set(
-            Math.cos(y), 0, Math.sin(y), 0,
-            0, 1, 0, 0,
-            -Math.sin(y), 0, Math.cos(y), 0,
-            0, 0, 0, 1
-        )
-        return m
-    }
-
-    private static rotateOnZMatrix(z: number): Matrix4 {
-        let m = new Matrix4()
-        m.set(
-            Math.cos(z), -Math.sin(z), 0, 0,
-            Math.sin(z), Math.cos(z), 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-        )
-        return m
-    }
+// applies M to node and all its children
+function applyTransformation(node: THREE.Object3D, M: Matrix4){
+    node.matrixWorld.multiply(M)
+    node.children.forEach( i => i.matrixWorld.multiply(M))
+}
 
 
+
+
+// refernce https://learnopengl.com/Getting-started/Transformations
+// x in radians
+function rotateOnXMatrix(x: number): Matrix4 {
+    let m = new Matrix4()
+    m.set(
+        1, 0, 0, 0,
+        0, Math.cos(x), -Math.sin(x), 0,
+        0, Math.sin(x), Math.cos(x), 0,
+        0, 0, 0, 1
+    )
+    return m
+}
+
+function rotateOnYMatrix(y: number): Matrix4 {
+    let m = new Matrix4()
+    m.set(
+        Math.cos(y), 0, Math.sin(y), 0,
+        0, 1, 0, 0,
+        -Math.sin(y), 0, Math.cos(y), 0,
+        0, 0, 0, 1
+    )
+    return m
+}
+
+function rotateOnZMatrix(z: number): Matrix4 {
+    let m = new Matrix4()
+    m.set(
+        Math.cos(z), -Math.sin(z), 0, 0,
+        Math.sin(z), Math.cos(z), 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    )
+    return m
 }

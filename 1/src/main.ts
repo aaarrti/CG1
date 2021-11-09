@@ -45,7 +45,7 @@ function main(){
     // manually set matrixWorld
     scene.matrixWorld.copy(scene.matrix);
     helper.logMatrixes('scene', scene)
-    helper.constructSkeleton(scene)
+    helper.constructRobot(scene)
     helper.setupLight(scene);
 
     // create camera
