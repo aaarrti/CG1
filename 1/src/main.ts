@@ -6,7 +6,7 @@ import RenderWidget from './lib/rendererWidget';
 import { Application, createWindow, Window } from './lib/window';
 
 import * as helper from './helper';
-import {KeyBoardInputHandler} from "./helper";
+import {constructRobot, KeyBoardInputHandler} from "./helper";
 // put your imports here
 
 /*******************************************************************************
@@ -44,8 +44,6 @@ function main(){
     var scene = new THREE.Scene();
     // manually set matrixWorld
     scene.matrixWorld.copy(scene.matrix);
-    helper.logMatrixes('scene', scene)
-    helper.constructRobot(scene)
     helper.setupLight(scene);
 
     // create camera
@@ -56,7 +54,7 @@ function main(){
     controls = new OrbitControls(camera, rendererDiv);
     helper.setupControls(controls);
 
-    let habler = new KeyBoardInputHandler(scene);
+    let habler = constructRobot(scene)
     document.addEventListener('keydown', event => habler.handleKeyboard(event));
 
     // fill the renderDiv. In RenderWidget happens all the magic.
