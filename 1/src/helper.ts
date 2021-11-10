@@ -47,6 +47,7 @@ export function setupControls(controls: OrbitControls) {
     return controls;
 }
 
+const defaultState: Map<number, State> = new Map<number, State>()
 
 function addObject(scene: THREE.Object3D, color: string, geometry: THREE.BufferGeometry, m: Matrix4): THREE.Mesh {
     const material = new THREE.MeshPhysicalMaterial({color: color});
@@ -54,6 +55,7 @@ function addObject(scene: THREE.Object3D, color: string, geometry: THREE.BufferG
     mesh.matrix.copy(m)
     mesh.matrixWorld.copy(computeWorldMatrix(mesh))
     color.localeCompare('Matrix')
+    defaultState.set(mesh.id, new State(mesh.matrixWorld, mesh.matrix))
     scene.add(mesh);
     return mesh
 }
@@ -86,6 +88,15 @@ function linearTranslationMatrix(x: number, y: number, z: number) {
 const ARM_GEOMETRY = new THREE.BoxGeometry(0.05, 0.22, 0.05)
 const LEG_GEOMETRY = new THREE.BoxGeometry(0.07, 0.25, 0.07)
 
+class State {
+    world: Matrix4
+    local: Matrix4
+
+    constructor(world: Matrix4, local: Matrix4) {
+        this.world = new Matrix4().copy(world);
+        this.local = new Matrix4().copy(local);
+    }
+}
 
 let left_arm_id = NaN
 let right_arm_id = NaN
@@ -127,7 +138,7 @@ export function constructRobot(scene: THREE.Scene): KeyBoardInputHandler {
     let body_geometry = new THREE.BoxGeometry(0.2, 0.5, 0.1)
     let body = addObject(scene, 'blue', body_geometry, new Matrix4().identity())
     let head_geometry = new THREE.SphereGeometry(0.1, 30, 30)
-    let head = addObject(body, 'blue', head_geometry, linearTranslationMatrix(0, 0.2, 0))
+    addObject(body, 'blue', head_geometry, linearTranslationMatrix(0, 0.2, 0))
     addArm(body, true)
     addArm(body, false)
     addLeg(body, true)
@@ -151,10 +162,6 @@ export class KeyBoardInputHandler {
         }
     }
 
-    //private getOriginalPosition() : Matrix4 {
-    //    return this.nodeMeta.get(this.activeNode.id).originalPosition
-    //}
-
     private static setColor(obj: THREE.Object3D<THREE.Event>) {
         if (obj.type === 'Mesh') {
             ((obj as THREE.Mesh)
@@ -164,13 +171,9 @@ export class KeyBoardInputHandler {
     }
 
     public handleKeyboard(event: KeyboardEvent) {
-
-        console.log('Key Pressed: ', event.key)
-
         switch (event.key) {
             case 'r':
-                let root = findRootMesh(this.activeNode)
-                resetRobot(root)
+                resetRobot(findRootMesh(this.activeNode))
                 break
             case 'w':
                 const parent = this.activeNode.parent;
@@ -241,9 +244,7 @@ export class KeyBoardInputHandler {
                     this.activeNode.add(ax)
                 } else {
                     // remove axes
-                    this.activeNode.remove(
-                        this.activeNode.children.filter(i => i.type === 'AxesHelper')[0]
-                    )
+                    this.activeNode.remove(this.activeNode.children.filter(i => i.type === 'AxesHelper')[0])
                 }
                 break
             case 'ArrowRight':
@@ -259,18 +260,11 @@ export class KeyBoardInputHandler {
                 rotate(this.activeNode, rotateOnXMatrix(degToRad(ROTATION_ANGLE_DEG)))
                 break
         }
-
     }
-
 
 }
 
 const ROTATION_ANGLE_DEG = 30
-
-function extractTranslation(M: Matrix4) {
-    let arr = M.toArray()
-    return linearTranslationMatrix(arr[12], arr[13], arr[14])
-}
 
 function findRootMesh(node: Object3D): Object3D {
     if (node.parent === null || node.parent.type !== 'Mesh') {
@@ -281,13 +275,19 @@ function findRootMesh(node: Object3D): Object3D {
 
 // works only if initial position didnt have any rotations
 function resetRobot(node: Object3D) {
-    let t = extractTranslation(node.matrix)
-    node.matrixWorld.multiply(node.matrix.invert())
-    node.matrix = t
-    node.matrixWorld.multiply(node.matrix)
-    node.children.filter(i => i.type === 'Mesh').forEach(resetRobot)
+    if (defaultState.has(node.id)) {
+        let state = defaultState.get(node.id)
+        // @ts-ignore
+        node.matrix.copy(state.local)
+        // @ts-ignore
+        node.matrixWorld.copy(state.world)
+    }
+    node.children.forEach(resetRobot)
+    left_arm_moved = false
+    right_arm_moved = false
+    left_leg_moved = false
+    right_leg_moved = false
 }
-
 
 function rotate(node: Object3D, M: Matrix4) {
     node.matrix.multiply(M)
@@ -297,7 +297,7 @@ function rotate(node: Object3D, M: Matrix4) {
 
 let left_arm_moved = false
 let right_arm_moved = false
-let left_arm_offset = linearTranslationMatrix(0.16, -0.19, 0)
+let left_arm_offset = linearTranslationMatrix(0.16, -0.2, 0)
 let right_arm_offset = linearTranslationMatrix(-0.16, -0.19, 0)
 let left_leg_moved = false
 let right_leg_moved = false
@@ -319,11 +319,11 @@ function propagateToChildren(node: Object3D) {
             node.matrix.multiply(right_arm_offset)
             right_arm_moved = true
         }
-        if (node.id === left_leg_id && !left_leg_moved){
+        if (node.id === left_leg_id && !left_leg_moved) {
             node.matrix.multiply(left_leg_offset)
             left_leg_moved = true
         }
-        if (node.id === right_leg_id && !right_leg_moved){
+        if (node.id === right_leg_id && !right_leg_moved) {
             node.matrix.multiply(right_leg_offset)
             right_leg_moved = true
         }
