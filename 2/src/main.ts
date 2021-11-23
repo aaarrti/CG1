@@ -31,6 +31,21 @@ function callback(changed: utils.KeyValuePair<helper.Settings>) {
         case 'rotateY':
             bear.rotation.y = changed.value
             break
+        case 'near':
+            screenCamera.near = changed.value
+            screenCamera.updateProjectionMatrix()
+            cameraHelper.update()
+            break
+        case 'far':
+            screenCamera.far = changed.value
+            screenCamera.updateProjectionMatrix()
+            cameraHelper.update()
+            break
+        case 'fov':
+            screenCamera.fov = changed.value
+            screenCamera.updateProjectionMatrix()
+            cameraHelper.update()
+
     }
 
 }
@@ -41,6 +56,8 @@ function callback(changed: utils.KeyValuePair<helper.Settings>) {
 
 var settings: helper.Settings;
 var bear: THREE.Object3D;
+var screenCamera: THREE.PerspectiveCamera;
+var cameraHelper: THREE.CameraHelper;
 
 function main() {
     var root = Application("Camera");
@@ -74,12 +91,25 @@ function main() {
         antialias: true,  // to enable anti-alias and get smoother output
     });
     let screenScene = new THREE.Scene();
-    const screenCamera = new THREE.PerspectiveCamera()
-    helper.setupCamera(screenCamera, screenScene, 0.01, 10, 70)
+    screenCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+    helper.setupCamera(screenCamera, screenScene)
     let screenControls = new OrbitControls(screenCamera, screenDiv)
     helper.setupControls(screenControls)
     screenScene.add(bear)
     new RenderWidget(screenDiv, screenRenderer, screenCamera, screenScene, screenControls).animate()
+
+    // ---------------------------------------------------------------------------
+    // create world view (left)
+    let worldRenderer = new THREE.WebGLRenderer({
+        antialias: true,  // to enable anti-alias and get smoother output
+    });
+    let worldCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+    let worldControls = new OrbitControls(worldCamera, worldDiv)
+    helper.setupCamera(worldCamera, screenScene)
+    helper.setupControls(worldControls)
+    cameraHelper = new THREE.CameraHelper(screenCamera)
+    screenScene.add(cameraHelper)
+    new RenderWidget(worldDiv, worldRenderer, worldCamera, screenScene, worldControls).animate()
 }
 
 // call main entrypoint

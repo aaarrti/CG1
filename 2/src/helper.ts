@@ -67,15 +67,19 @@ export function createGUI(params: Settings): dat.GUI {
 }
 
  // define camera that looks into scene
-export function setupCamera(camera: THREE.PerspectiveCamera, scene: THREE.Scene, near: number, far: number, fov: number){
+function _setupCamera(camera: THREE.PerspectiveCamera, scene: THREE.Scene, near: number, far: number, fov: number, z : number){
   // https://threejs.org/docs/#api/cameras/PerspectiveCamera
   camera.near = near;
   camera.far = far;
   camera.fov = fov;
-  camera.position.z = 3;
+  camera.position.z = z
   camera.lookAt(scene.position);
   camera.updateProjectionMatrix()
   return camera
+}
+
+export function setupCamera(camera: THREE.PerspectiveCamera, scene: THREE.Scene, z: number = 3){
+  return _setupCamera(camera, scene, 0.1, 10, 70, z)
 }
 
 export function createCanonicalCamera(){
