@@ -25,19 +25,30 @@ uniform vec3 cameraPosition;
 
 out vec4 fragColor;
 
-uniform float ambient_color_r;
-uniform float ambient_color_g;
-uniform float ambient_color_b;
+uniform vec3 ambient_color;
 uniform float ambient_reflectance;
 
+
+in vec3 normal_out;
+uniform int shader_type;
+uniform mat3 matrixWorldTransposeInverse;
+
 // main function gets executed for every pixel
-void main()
-{
-    //this colors all fragments (pixels) in the same color (RGBA)
-    fragColor = vec4(
-        ambient_reflectance * ambient_color_r / 255.,
-        ambient_reflectance * ambient_color_g / 255.,
-        ambient_reflectance * ambient_color_b / 255.,
-        1.
-    );
+void main(){
+    if(shader_type == 0){
+        // Basic
+        //this colors all fragments (pixels) in the same color (RGBA)
+        fragColor = vec4(0, 0, 0, 1);
+    }
+    if(shader_type  == 1){
+        // Ambient
+        fragColor = vec4(ambient_reflectance * ambient_color[0] / 255.,
+                         ambient_reflectance * ambient_color[1] / 255.,
+                         ambient_reflectance * ambient_color[2] / 255., 1.
+        );
+    }
+    if(shader_type == 2){
+        // Normal
+        fragColor = vec4(normal_out * 0.5 + 0.5, 1.);
+    }
 }

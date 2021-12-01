@@ -1,4 +1,4 @@
-#version 300 es 
+#version 300 es
 
 // These uniforms and attributes are provided by threejs.
 // If you want to add your own, look at https://threejs.org/docs/#api/en/materials/ShaderMaterial #Custom attributes and uniforms
@@ -29,8 +29,12 @@ in vec3 position;
 in vec3 normal;
 in vec2 uv;
 
+out vec3 normal_out;
+uniform mat3 matrixWorldTransposeInverse;
+
 // main function gets executed for every vertex
-void main()
-{
+void main(){
+    normal_out = matrixWorldTransposeInverse * normal;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
+
 }

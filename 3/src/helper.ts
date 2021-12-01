@@ -9,7 +9,7 @@ import * as utils from "./lib/utils";
 import basicVertexShader from "./shader/basic.v.glsl";
 import basicFragmentShader from "./shader/basic.f.glsl";
 import type { Scene } from "three";
-import { Mesh, RawShaderMaterial } from "three";
+import { Matrix3, Mesh, RawShaderMaterial } from "three";
 
 /*******************************************************************************
  * Defines Settings and GUI will later be seperated into settings.ts
@@ -25,6 +25,27 @@ export enum Shaders {
     gouraud_phong = "Gouraud",
     phong_phong = "Phong",
     phong_blinnPhong = "Blinn-Phong",
+}
+
+function enumToInt(s: Shaders) {
+    switch (s) {
+        case "Basic":
+            return 0;
+        case "Ambient":
+            return 1;
+        case "Normal":
+            return 2;
+        case "Toon":
+            return 3;
+        case "Lambert":
+            return 4;
+        case "Gouraud":
+            return 5;
+        case "Phong":
+            return 6;
+        case "Blinn-Phong":
+            return 7;
+    }
 }
 
 // (default) Settings.
@@ -43,8 +64,8 @@ export class Settings extends utils.Callbackable {
     lightZ: number = 2;
 }
 
-export const params = new Settings()
-params.addCallback(callback)
+export const params = new Settings();
+params.addCallback(callback);
 
 // create GUI given a Settings object
 export function createGUI(): dat.GUI {
@@ -79,16 +100,17 @@ var default_uniforms: { [uniform: string]: THREE.IUniform };
 default_uniforms = {
     magnitude: { value: 2 },
     w_coord: { value: 1. },
-    ambient_color_r: { value: 104. },
-    ambient_color_g: { value: 13. },
-    ambient_color_b: { value: 13. },
-    ambient_reflectance: { value: 0.5 }
+    ambient_color: { value: [104., 13., 13.] },
+    ambient_reflectance: { value: 0.5 },
+    shader_type: { value: 0 },
+    matrixWorldTransposeInverse: {value: new Matrix3().identity()}
 };
 
 
 /*******************************************************************************
  * helper functions to build scene (geometry, light), camera and controls.
  ******************************************************************************/
+
 export function setupGeometry(scene: THREE.Scene) {
     // https://threejs.org/docs/#api/en/geometries/BoxGeometry
     var torusKnotGeo = new THREE.TorusKnotGeometry(1, 0.3, 100, 32);
@@ -98,12 +120,11 @@ export function setupGeometry(scene: THREE.Scene) {
     var material = new THREE.RawShaderMaterial({
         uniforms: default_uniforms,
         vertexShader: basicVertexShader,
-        fragmentShader: basicFragmentShader
+        fragmentShader: basicFragmentShader,
     });
 
     var model0 = new THREE.Mesh(torusKnotGeo, material);
     scene.add(model0);
-
     sphereGeo1.scale(1, 0.5, 1);
     var model1 = new THREE.Mesh(sphereGeo1, material);
     model1.rotateX(3.141592 / 2);
@@ -121,7 +142,13 @@ export function setupGeometry(scene: THREE.Scene) {
     var model3 = new THREE.Mesh(boxGeo, material);
     model3.translateX(4);
     scene.add(model3);
-
+    scene.traverse(obj => {
+        if (obj instanceof Mesh){
+            (obj.material as RawShaderMaterial).uniforms['matrixWorldTransposeInverse'] = {
+                value: new Matrix3().setFromMatrix4(obj.matrixWorld.transpose().invert())
+            }
+        }
+    })
     return { material, model0, model1, model2, model3 };
 }
 
@@ -155,13 +182,19 @@ export function setupControls(controls: OrbitControls) {
 
 function callback(changed: utils.KeyValuePair<Settings>) {
     switch (changed.key) {
-        case 'ambient_color':
-            default_uniforms["ambient_color_r"] = { value: changed.value[0] }
-            default_uniforms["ambient_color_g"] = { value: changed.value[1] }
-            default_uniforms["ambient_color_b"] = { value: changed.value[2] }
+        case "ambient_color":
+            default_uniforms["ambient_color"] = { value: changed.value };
             break;
-        case 'ambient_reflectance':
-            default_uniforms['ambient_reflectance'] = {value: changed.value}
+        case "ambient_reflectance":
+            default_uniforms["ambient_reflectance"] = { value: changed.value };
+            break;
+        case "shader":
+            const type = enumToInt(changed.value);
+            default_uniforms["shader_type"] = { value: type };
+            break;
+        case 'lightX':
+
+
 
     }
 }
