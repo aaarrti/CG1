@@ -32,5 +32,5 @@ in vec2 uv;
 // main function gets executed for every vertex
 void main()
 {
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
 }

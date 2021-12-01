@@ -10,15 +10,7 @@ import type * as utils from './lib/utils';
 // helper lib, provides exercise dependent prewritten Code
 import * as helper from './helper';
 
-// load shaders
-import basicVertexShader from './shader/basic.v.glsl';
-import basicFragmentShader from './shader/basic.f.glsl';
 
-// defines callback that should get called whenever the
-// params of the settings get changed (eg. via GUI)
-function callback(changed: utils.KeyValuePair<helper.Settings>) {
-
-}
 
 // feel free to declar certain variables outside the main function to change them somewhere else
 // e.g. settings, light or material
@@ -33,10 +25,8 @@ function main(){
 
   // ---------------------------------------------------------------------------
   // create Settings and create GUI settings
-  var settings = new helper.Settings();
   helper.createGUI();
   // adds the callback that gets called on params change
-  settings.addCallback(callback);
 
   // ---------------------------------------------------------------------------
   // create RenderDiv

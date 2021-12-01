@@ -25,9 +25,19 @@ uniform vec3 cameraPosition;
 
 out vec4 fragColor;
 
+uniform float ambient_color_r;
+uniform float ambient_color_g;
+uniform float ambient_color_b;
+uniform float ambient_reflectance;
+
 // main function gets executed for every pixel
 void main()
 {
-  //this colors all fragments (pixels) in the same color (RGBA)
-  fragColor = vec4(1., 1., 1., 1.0) ;
+    //this colors all fragments (pixels) in the same color (RGBA)
+    fragColor = vec4(
+        ambient_reflectance * ambient_color_r / 255.,
+        ambient_reflectance * ambient_color_g / 255.,
+        ambient_reflectance * ambient_color_b / 255.,
+        1.
+    );
 }
