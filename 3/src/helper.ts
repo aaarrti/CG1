@@ -10,6 +10,7 @@ import basicVertexShader from "./shader/basic.v.glsl";
 import basicFragmentShader from "./shader/basic.f.glsl";
 import type { Scene } from "three";
 import { Matrix3, Mesh, RawShaderMaterial } from "three";
+import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper";
 
 /*******************************************************************************
  * Defines Settings and GUI will later be seperated into settings.ts
@@ -59,9 +60,9 @@ export class Settings extends utils.Callbackable {
     specular_reflectance: number = 1;
     specular_color: [number, number, number] = [255, 255, 255];
     magnitude: number = 128;
-    lightX: number = 2;
-    lightY: number = 2;
-    lightZ: number = 2;
+    lightX: number = 0;
+    lightY: number = 0;
+    lightZ: number = 0;
 }
 
 export const params = new Settings();
@@ -103,7 +104,8 @@ default_uniforms = {
     ambient_color: { value: [104., 13., 13.] },
     ambient_reflectance: { value: 0.5 },
     shader_type: { value: 0 },
-    matrixWorldTransposeInverse: {value: new Matrix3().identity()}
+    matrixWorldTransposeInverse: { value: new Matrix3().identity() },
+    matrixTransposeInverse: { value: new Matrix3().identity() }
 };
 
 
@@ -114,13 +116,13 @@ default_uniforms = {
 export function setupGeometry(scene: THREE.Scene) {
     // https://threejs.org/docs/#api/en/geometries/BoxGeometry
     var torusKnotGeo = new THREE.TorusKnotGeometry(1, 0.3, 100, 32);
-    var sphereGeo1 = new THREE.SphereGeometry(1.4, 20, 20);
+    var sphereGeo1 = new THREE.SphereGeometry(1.4, 20, 100);
     var boxGeo = new THREE.BoxGeometry(2, 2, 2);
-    var sphereGeo2 = new THREE.SphereGeometry(1.4, 20, 20);
+    var sphereGeo2 = new THREE.SphereGeometry(1.4, 20, 100);
     var material = new THREE.RawShaderMaterial({
         uniforms: default_uniforms,
         vertexShader: basicVertexShader,
-        fragmentShader: basicFragmentShader,
+        fragmentShader: basicFragmentShader
     });
 
     var model0 = new THREE.Mesh(torusKnotGeo, material);
@@ -142,13 +144,22 @@ export function setupGeometry(scene: THREE.Scene) {
     var model3 = new THREE.Mesh(boxGeo, material);
     model3.translateX(4);
     scene.add(model3);
+    //scene.add(
+    //    new VertexNormalsHelper(model1, 0.5, 0x00ff00),
+    //    new VertexNormalsHelper(model2, 0.5, 0x00ff00)
+    //);
     scene.traverse(obj => {
-        if (obj instanceof Mesh){
-            (obj.material as RawShaderMaterial).uniforms['matrixWorldTransposeInverse'] = {
+        if (obj instanceof Mesh) {
+            obj.geometry.computeVertexNormals();
+
+            (obj.material as RawShaderMaterial).uniforms["matrixWorldTransposeInverse"] = {
                 value: new Matrix3().setFromMatrix4(obj.matrixWorld.transpose().invert())
-            }
+            };
+            (obj.material as RawShaderMaterial).uniforms["matrixTransposeInverse"] = {
+                value: new Matrix3().setFromMatrix4(obj.matrix.transpose().invert())
+            };
         }
-    })
+    });
     return { material, model0, model1, model2, model3 };
 }
 
@@ -189,11 +200,14 @@ function callback(changed: utils.KeyValuePair<Settings>) {
             default_uniforms["ambient_reflectance"] = { value: changed.value };
             break;
         case "shader":
+            if (changed.value === Shaders.normal) {
+
+
+            }
             const type = enumToInt(changed.value);
             default_uniforms["shader_type"] = { value: type };
             break;
-        case 'lightX':
-
+        case "lightX":
 
 
     }
