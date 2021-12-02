@@ -45,6 +45,7 @@ function main() {
     var lightgeo = new THREE.SphereGeometry(0.1, 32, 32);
     var lightMaterial = new THREE.MeshBasicMaterial({ color: 0xff8010 });
     var light = new THREE.Mesh(lightgeo, lightMaterial);
+    light.name = 'light';
     scene.add(light);
 
     // create camera

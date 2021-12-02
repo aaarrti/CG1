@@ -31,11 +31,10 @@ in vec2 uv;
 
 out vec3 normal_out;
 out vec3 position_f;
-uniform mat3 matrixWorldTransposeInverse;
-uniform mat3 matrixTransposeInverse;
+
 // main function gets executed for every vertex
 void main(){
-    normal_out = matrixWorldTransposeInverse * normal;
+    normal_out = normal;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
     position_f = position;
 

@@ -8,9 +8,8 @@ import * as utils from "./lib/utils";
 // load shader
 import basicVertexShader from "./shader/basic.v.glsl";
 import basicFragmentShader from "./shader/basic.f.glsl";
-import type { Scene } from "three";
-import { Matrix3, Mesh, RawShaderMaterial } from "three";
 import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper";
+import { Scene } from "three";
 
 /*******************************************************************************
  * Defines Settings and GUI will later be seperated into settings.ts
@@ -104,16 +103,19 @@ default_uniforms = {
     ambient_color: { value: [104., 13., 13.] },
     ambient_reflectance: { value: 0.5 },
     shader_type: { value: 0 },
-    matrixWorldTransposeInverse: { value: new Matrix3().identity() },
-    matrixTransposeInverse: { value: new Matrix3().identity() }
+    diffuse_reflectance: { value: 1. },
+    diffuse_color: { value: [204., 25., 25.] },
+    light_position: { value: [0., 0., 0.] }
 };
 
 
 /*******************************************************************************
  * helper functions to build scene (geometry, light), camera and controls.
  ******************************************************************************/
+let _scene: THREE.Scene;
 
 export function setupGeometry(scene: THREE.Scene) {
+    _scene = scene;
     // https://threejs.org/docs/#api/en/geometries/BoxGeometry
     var torusKnotGeo = new THREE.TorusKnotGeometry(1, 0.3, 100, 32);
     var sphereGeo1 = new THREE.SphereGeometry(1.4, 20, 100);
@@ -144,22 +146,6 @@ export function setupGeometry(scene: THREE.Scene) {
     var model3 = new THREE.Mesh(boxGeo, material);
     model3.translateX(4);
     scene.add(model3);
-    //scene.add(
-    //    new VertexNormalsHelper(model1, 0.5, 0x00ff00),
-    //    new VertexNormalsHelper(model2, 0.5, 0x00ff00)
-    //);
-    scene.traverse(obj => {
-        if (obj instanceof Mesh) {
-            obj.geometry.computeVertexNormals();
-
-            (obj.material as RawShaderMaterial).uniforms["matrixWorldTransposeInverse"] = {
-                value: new Matrix3().setFromMatrix4(obj.matrixWorld.transpose().invert())
-            };
-            (obj.material as RawShaderMaterial).uniforms["matrixTransposeInverse"] = {
-                value: new Matrix3().setFromMatrix4(obj.matrix.transpose().invert())
-            };
-        }
-    });
     return { material, model0, model1, model2, model3 };
 }
 
@@ -185,7 +171,7 @@ export function setupControls(controls: OrbitControls) {
     controls.minDistance = 0.1;
     controls.maxDistance = 9;
     return controls;
-};
+}
 
 
 // defines callback that should get called whenever the
@@ -200,15 +186,36 @@ function callback(changed: utils.KeyValuePair<Settings>) {
             default_uniforms["ambient_reflectance"] = { value: changed.value };
             break;
         case "shader":
-            if (changed.value === Shaders.normal) {
-
-
-            }
             const type = enumToInt(changed.value);
             default_uniforms["shader_type"] = { value: type };
             break;
         case "lightX":
+            let lightx = _scene.getObjectByName("light");
+            if (lightx) {
+                lightx.position.x = changed.value;
+                default_uniforms["light_position"] = { value: lightx.position };
+            }
 
-
+            break;
+        case "lightY":
+            let lighty = _scene.getObjectByName("light");
+            if (lighty) {
+                lighty.position.y = changed.value;
+                default_uniforms["light_position"] = { value: lighty.position };
+            }
+            break;
+        case "lightZ":
+            let lightz = _scene.getObjectByName("light");
+            if (lightz) {
+                lightz.position.z = changed.value;
+                default_uniforms["light_position"] = { value: lightz.position };
+            }
+            break;
+        case "diffuse_reflectance":
+            default_uniforms["diffuse_reflectance"] = { value: changed.value };
+            break;
+        case "diffuse_color":
+            default_uniforms["diffuse_color"] = { value: changed.value };
+            break;
     }
 }
