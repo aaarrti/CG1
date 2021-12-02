@@ -86,7 +86,7 @@ void main(){
         }
     }
 
-    if(shader_type == 5){
+    if (shader_type == 5){
         // Gourard
         fragColor = vec4(gourard_color, 1.0);
     }
@@ -106,6 +106,29 @@ void main(){
             specular_component = vec3(0, 0, 0);
         }
 
+        // Lambert component
+        float cos_gamma_light = dot(vec_light_to_obj, normal_out) / (length(vec_light_to_obj) * length(normal_out));
+        vec3 lamber_component;
+        if (cos_gamma_light > 0.){
+            lamber_component = diffuse_color * cos_gamma_light * diffuse_reflectance / 255.;
+        } else {
+            lamber_component = vec3(0, 0, 0) / 2.;
+        }
+        fragColor = vec4(specular_component + lamber_component, 1.);
+    }
+
+    if (shader_type == 7){
+        // Blinn Phong
+        vec3 view_direction = cameraPosition - position_f;
+        vec3 vec_light_to_obj =  light_position - position_f;
+        vec3 h = (view_direction + vec_light_to_obj) / length(view_direction + vec_light_to_obj);
+        float hn = dot(h, normal_out);
+        vec3 specular_component;
+        if (hn > 0.){
+            specular_component = specular_reflectance * pow(hn, magnitude) * specular_light / 255.;
+        } else {
+            specular_component = vec3(0, 0, 0);
+        }
         // Lambert component
         float cos_gamma_light = dot(vec_light_to_obj, normal_out) / (length(vec_light_to_obj) * length(normal_out));
         vec3 lamber_component;
