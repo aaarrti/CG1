@@ -30,53 +30,90 @@ uniform float ambient_reflectance;
 
 
 in vec3 normal_out;
-uniform int shader_type;
 in vec3 position_f;
 
+
+uniform int shader_type;
 uniform vec3 light_position;
 uniform float diffuse_reflectance;
 uniform vec3 diffuse_color;
+uniform float specular_reflectance;
+uniform float magnitude;
+uniform vec3 specular_light;
+
+in vec3 gourard_color;
 
 // main function gets executed for every pixel
 void main(){
-    if(shader_type == 0){
+    if (shader_type == 0){
         // Basic
         //this colors all fragments (pixels) in the same color (RGBA)
         fragColor = vec4(0, 0, 0, 1);
     }
-    if(shader_type  == 1){
+    if (shader_type  == 1){
         // Ambient
         fragColor = vec4(ambient_reflectance * ambient_color[0] / 255.,
-                         ambient_reflectance * ambient_color[1] / 255.,
-                         ambient_reflectance * ambient_color[2] / 255., 1.
+        ambient_reflectance * ambient_color[1] / 255.,
+        ambient_reflectance * ambient_color[2] / 255., 1.
         );
     }
-    if(shader_type == 2){
+    if (shader_type == 2){
         // Normal
         fragColor = vec4(normalize(normal_out) * 0.5 + 0.5, 1.0);
     }
-    if(shader_type == 3){
+    if (shader_type == 3){
         // Toon
         vec3 vec_to_camera = cameraPosition - position_f;
         // a dot b = |a||b| cos(gamma)
-        float cos_gamma = dot(vec_to_camera, normal_out) / length(vec_to_camera) * length(normal_out);
+        float cos_gamma = dot(vec_to_camera, normal_out) / (length(vec_to_camera) * length(normal_out));
         // cos(0) = 1, cos(pi/2) = 0
-        if(cos_gamma > 0.){
-            fragColor = vec4(0., 0., cos_gamma, 0.);
-        }else{
+        if (cos_gamma > 0.){
+            fragColor = cos_gamma * vec4(80., 13., 104., 0.) / 255.;
+        } else {
             fragColor = vec4(0., 0., 0., 0.);
         }
     }
-    if(shader_type == 4){
+    if (shader_type == 4){
         // Diffuse aka Lambert
         vec3 vec_to_light = light_position - position_f;
         // a dot b = |a||b| cos(gamma)
-        float cos_gamma = dot(vec_to_light, normal_out) / length(vec_to_light) * length(normal_out);
+        float cos_gamma = dot(vec_to_light, normal_out) / (length(vec_to_light) * length(normal_out));
         // cos(0) = 1, cos(pi/2) = 0
-        if(cos_gamma > 0.){
+        if (cos_gamma > 0.){
             fragColor = vec4(diffuse_color * cos_gamma * diffuse_reflectance / 255., 1.);
-        }else{
+        } else {
             fragColor = vec4(0., 0., 0., 0.);
         }
+    }
+
+    if(shader_type == 5){
+        // Gourard
+        fragColor = vec4(gourard_color, 1.0);
+    }
+
+    if (shader_type == 6){
+        // Phong
+        vec3 vec_light_to_obj =  light_position - position_f;
+
+        // specular component
+        vec3 ideal_reflection = reflect(vec_light_to_obj, normal_out);
+        vec3 vec_to_camera = position_f - cameraPosition;
+        float cos_gamma_reflect_view = dot(vec_to_camera, ideal_reflection) / (length(ideal_reflection) * length(vec_to_camera));
+        vec3 specular_component;
+        if (cos_gamma_reflect_view > 0.){
+            specular_component = specular_reflectance * pow(cos_gamma_reflect_view, magnitude) * specular_light / 255.;
+        } else {
+            specular_component = vec3(0, 0, 0);
+        }
+
+        // Lambert component
+        float cos_gamma_light = dot(vec_light_to_obj, normal_out) / (length(vec_light_to_obj) * length(normal_out));
+        vec3 lamber_component;
+        if (cos_gamma_light > 0.){
+            lamber_component = diffuse_color * cos_gamma_light * diffuse_reflectance / 255.;
+        } else {
+            lamber_component = vec3(0, 0, 0) / 2.;
+        }
+        fragColor = vec4(specular_component + lamber_component, 1.);
     }
 }

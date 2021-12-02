@@ -98,14 +98,17 @@ export function createGUI(): dat.GUI {
 
 var default_uniforms: { [uniform: string]: THREE.IUniform };
 default_uniforms = {
-    magnitude: { value: 2 },
+    magnitude: { value: 128 },
     w_coord: { value: 1. },
     ambient_color: { value: [104., 13., 13.] },
     ambient_reflectance: { value: 0.5 },
     shader_type: { value: 0 },
     diffuse_reflectance: { value: 1. },
     diffuse_color: { value: [204., 25., 25.] },
-    light_position: { value: [0., 0., 0.] }
+    light_position: { value: [0., 0., 0.] },
+    specular_reflectance: {value: 1.},
+    specular_light: {value: [255., 255., 255.]},
+    shader_type_v: {value: 1}
 };
 
 
@@ -188,6 +191,7 @@ function callback(changed: utils.KeyValuePair<Settings>) {
         case "shader":
             const type = enumToInt(changed.value);
             default_uniforms["shader_type"] = { value: type };
+            default_uniforms['shader_type_v'] = {value: type}
             break;
         case "lightX":
             let lightx = _scene.getObjectByName("light");
@@ -217,5 +221,14 @@ function callback(changed: utils.KeyValuePair<Settings>) {
         case "diffuse_color":
             default_uniforms["diffuse_color"] = { value: changed.value };
             break;
+        case 'magnitude':
+            default_uniforms['magnitude'] = {value: changed.value};
+            break
+        case 'specular_color':
+            default_uniforms['specular_light'] = {value: changed.value}
+            break
+        case 'specular_reflectance':
+            default_uniforms['specular_reflectance'] = {value: changed.value}
+            break
     }
 }
