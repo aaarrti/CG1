@@ -41,9 +41,12 @@ out vec3 normal_out;
 out vec3 position_f;
 out vec3 gourard_color;
 
+uniform mat3 matrixWorld;
+uniform mat3 matrix;
+
 // main function gets executed for every vertex
 void main(){
-    normal_out = normal;
+    normal_out = matrixWorld * matrix * normal;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
     position_f = position;
 

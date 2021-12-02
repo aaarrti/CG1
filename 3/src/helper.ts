@@ -9,7 +9,7 @@ import * as utils from "./lib/utils";
 import basicVertexShader from "./shader/basic.v.glsl";
 import basicFragmentShader from "./shader/basic.f.glsl";
 import { VertexNormalsHelper } from "three/examples/jsm/helpers/VertexNormalsHelper";
-import { Scene } from "three";
+import { Matrix3, Mesh, RawShaderMaterial, Scene, Uniform } from "three";
 
 /*******************************************************************************
  * Defines Settings and GUI will later be seperated into settings.ts
@@ -96,26 +96,28 @@ export function createGUI(): dat.GUI {
 }
 
 
-var default_uniforms: { [uniform: string]: THREE.IUniform };
-default_uniforms = {
-    magnitude: { value: 128 },
-    w_coord: { value: 1. },
-    ambient_color: { value: [104., 13., 13.] },
-    ambient_reflectance: { value: 0.5 },
-    shader_type: { value: 0 },
-    diffuse_reflectance: { value: 1. },
-    diffuse_color: { value: [204., 25., 25.] },
-    light_position: { value: [0., 0., 0.] },
-    specular_reflectance: { value: 1. },
-    specular_light: { value: [255., 255., 255.] },
-    shader_type_v: { value: 1 }
-};
-
-
 /*******************************************************************************
  * helper functions to build scene (geometry, light), camera and controls.
  ******************************************************************************/
 let _scene: THREE.Scene;
+
+function _uniforms() {
+    var default_uniforms: { [uniform: string]: THREE.IUniform };
+    default_uniforms = {
+        magnitude: { value: 128 },
+        w_coord: { value: 1. },
+        ambient_color: { value: [104., 13., 13.] },
+        ambient_reflectance: { value: 0.5 },
+        shader_type: { value: 0 },
+        diffuse_reflectance: { value: 1. },
+        diffuse_color: { value: [204., 25., 25.] },
+        light_position: { value: [0., 0., 0.] },
+        specular_reflectance: { value: 1. },
+        specular_light: { value: [255., 255., 255.] },
+        shader_type_v: { value: 1 },
+    };
+    return default_uniforms;
+}
 
 export function setupGeometry(scene: THREE.Scene) {
     _scene = scene;
@@ -125,7 +127,7 @@ export function setupGeometry(scene: THREE.Scene) {
     var boxGeo = new THREE.BoxGeometry(2, 2, 2);
     var sphereGeo2 = new THREE.SphereGeometry(1.4, 20, 100);
     var material = new THREE.RawShaderMaterial({
-        uniforms: default_uniforms,
+        uniforms: _uniforms(),
         vertexShader: basicVertexShader,
         fragmentShader: basicFragmentShader
     });
@@ -149,7 +151,22 @@ export function setupGeometry(scene: THREE.Scene) {
     var model3 = new THREE.Mesh(boxGeo, material);
     model3.translateX(4);
     scene.add(model3);
+    setMatricesAsUniforms()
     return { material, model0, model1, model2, model3 };
+}
+
+function setMatricesAsUniforms() {
+    _scene.traverse(obj => {
+        if (obj instanceof Mesh) {
+            let raw_sm = obj.material as RawShaderMaterial;
+            if (raw_sm.uniforms) {
+                let MW = new Matrix3().setFromMatrix4(obj.matrixWorld).transpose().invert();
+                let M = new Matrix3().setFromMatrix4(obj.matrixWorld).transpose().invert();
+                raw_sm.uniforms['matrixWorld'] = {value: MW};
+                raw_sm.uniforms['matrix'] = {value: M};
+            }
+        }
+    });
 }
 
 // define camera that looks into scene
@@ -179,25 +196,35 @@ export function setupControls(controls: OrbitControls) {
 
 // defines callback that should get called whenever the
 // params of the settings get changed (eg. via GUI)
+function update_uniforms(key: string, value: any) {
+    _scene.traverse(obj => {
+        if (obj instanceof Mesh) {
+            let raw_sm = obj.material as RawShaderMaterial;
+            if (raw_sm.uniforms) {
+                raw_sm.uniforms[key] = { value: value };
+            }
+        }
+    });
+}
 
 function callback(changed: utils.KeyValuePair<Settings>) {
     switch (changed.key) {
         case "ambient_color":
-            default_uniforms["ambient_color"] = { value: changed.value };
+            update_uniforms("ambient_color", changed.value);
             break;
         case "ambient_reflectance":
-            default_uniforms["ambient_reflectance"] = { value: changed.value };
+            update_uniforms("ambient_reflectance", changed.value);
             break;
         case "shader":
             const type = enumToInt(changed.value);
-            default_uniforms["shader_type"] = { value: type };
-            default_uniforms["shader_type_v"] = { value: type };
+            update_uniforms("shader_type", type);
+            update_uniforms("shader_type_v", type);
             break;
         case "lightX":
             let lightx = _scene.getObjectByName("light");
             if (lightx) {
                 lightx.position.x = changed.value;
-                default_uniforms["light_position"] = { value: lightx.position };
+                update_uniforms("light_position", lightx.position);
             }
 
             break;
@@ -205,30 +232,30 @@ function callback(changed: utils.KeyValuePair<Settings>) {
             let lighty = _scene.getObjectByName("light");
             if (lighty) {
                 lighty.position.y = changed.value;
-                default_uniforms["light_position"] = { value: lighty.position };
+                update_uniforms("light_position", lighty.position);
             }
             break;
         case "lightZ":
             let lightz = _scene.getObjectByName("light");
             if (lightz) {
                 lightz.position.z = changed.value;
-                default_uniforms["light_position"] = { value: lightz.position };
+                update_uniforms("light_position", lightz.position);
             }
             break;
         case "diffuse_reflectance":
-            default_uniforms["diffuse_reflectance"] = { value: changed.value };
+            update_uniforms("diffuse_reflectance", changed.value);
             break;
         case "diffuse_color":
-            default_uniforms["diffuse_color"] = { value: changed.value };
+            update_uniforms("diffuse_color", changed.value);
             break;
         case "magnitude":
-            default_uniforms["magnitude"] = { value: changed.value };
+            update_uniforms("magnitude", changed.value);
             break;
         case "specular_color":
-            default_uniforms["specular_light"] = { value: changed.value };
+            update_uniforms("specular_light", changed.value);
             break;
         case "specular_reflectance":
-            default_uniforms["specular_reflectance"] = { value: changed.value };
+            update_uniforms("specular_reflectance", changed.value);
             break;
     }
 }
