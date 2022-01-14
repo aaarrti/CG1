@@ -114,7 +114,7 @@ function _uniforms() {
         light_position: { value: [0., 0., 0.] },
         specular_reflectance: { value: 1. },
         specular_light: { value: [255., 255., 255.] },
-        shader_type_v: { value: 1 },
+        shader_type_v: { value: 1 }
     };
     return default_uniforms;
 }
@@ -132,41 +132,39 @@ export function setupGeometry(scene: THREE.Scene) {
         fragmentShader: basicFragmentShader
     });
 
-    var model0 = new THREE.Mesh(torusKnotGeo, material);
+    var model0 = new THREE.Mesh(torusKnotGeo, material.clone());
     scene.add(model0);
     sphereGeo1.scale(1, 0.5, 1);
-    var model1 = new THREE.Mesh(sphereGeo1, material);
+    var model1 = new THREE.Mesh(sphereGeo1, material.clone());
     model1.rotateX(3.141592 / 2);
     model1.translateX(-4);
     model1.translateZ(-1.5);
     scene.add(model1);
 
-    var model2 = new THREE.Mesh(sphereGeo2, material);
+    var model2 = new THREE.Mesh(sphereGeo2, material.clone());
     model2.scale.set(1, 0.5, 1);
     model2.rotateX(3.141592 / 2);
     model2.translateX(-4);
     model2.translateZ(1.5);
     scene.add(model2);
 
-    var model3 = new THREE.Mesh(boxGeo, material);
+    var model3 = new THREE.Mesh(boxGeo, material.clone());
     model3.translateX(4);
     scene.add(model3);
-    setMatricesAsUniforms()
+    _scene.traverse(setMatricesAsUniforms);
     return { material, model0, model1, model2, model3 };
 }
 
-function setMatricesAsUniforms() {
-    _scene.traverse(obj => {
-        if (obj instanceof Mesh) {
-            let raw_sm = obj.material as RawShaderMaterial;
-            if (raw_sm.uniforms) {
-                let MW = new Matrix3().setFromMatrix4(obj.matrixWorld).transpose().invert();
-                let M = new Matrix3().setFromMatrix4(obj.matrixWorld).transpose().invert();
-                raw_sm.uniforms['matrixWorld'] = {value: MW};
-                raw_sm.uniforms['matrix'] = {value: M};
-            }
+function setMatricesAsUniforms(obj: THREE.Object3D) {
+    if (obj instanceof Mesh) {
+        let raw_sm = obj.material as RawShaderMaterial;
+        if (raw_sm.uniforms) {
+            let MW = new Matrix3().setFromMatrix4(obj.matrixWorld).transpose().invert();
+            let M = new Matrix3().setFromMatrix4(obj.matrixWorld).transpose().invert();
+            raw_sm.uniforms["matrixWorld"] = { value: MW };
+            raw_sm.uniforms["matrix"] = { value: M };
         }
-    });
+    }
 }
 
 // define camera that looks into scene
