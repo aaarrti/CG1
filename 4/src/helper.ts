@@ -6,6 +6,8 @@ import * as dat from 'dat.gui';
 // local from us provided utilities
 import * as utils from './lib/utils';
 import bunny from './models/bunny.obj';
+import {Float32BufferAttribute, Uint16BufferAttribute} from "three";
+
 
 /*******************************************************************************
  * helper functions to build scene (geometry, light), camera and controls.
@@ -134,7 +136,7 @@ function _selectImage(type: string): string {
     return imageName;
 }
 
-export function loadTexture(name: string){
+export function loadTexture(name: string) {
     const path = _selectImage(name)
     return new THREE.TextureLoader().load(path);
 }
@@ -142,7 +144,7 @@ export function loadTexture(name: string){
 // @ts-ignore
 export var loadedTextures;
 
-export function initTextures(){
+export function initTextures() {
     loadedTextures = {
         earth: loadTexture('earth'),
         colors: loadTexture('colors'),
@@ -159,7 +161,7 @@ export function initTextures(){
 
 
 export function selectTexture(type: Textures): THREE.Texture {
-    switch (type){
+    switch (type) {
         case Textures.checker:
             return loadedTextures.checker
         case Textures.colors:
@@ -181,6 +183,12 @@ export function selectTexture(type: Textures): THREE.Texture {
         case Textures.wood_ceiling:
             return loadedTextures.wood
     }
+}
 
-
+export function constructQuad(): THREE.BufferGeometry {
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new Float32BufferAttribute([-0.5, 0.5, 0., 0.5, 0.5, 0., -0.5, -0.5, 0, 0.5, -0.5, 0.], 3))
+    geo.setAttribute('uv', new Float32BufferAttribute([0., 1., 1., 1., 0., 0., 1., 0.], 2))
+    geo.setIndex(new Uint16BufferAttribute([0, 2, 1, 2, 3, 1], 1))
+    return geo;
 }

@@ -15,6 +15,7 @@ import {Application, createWindow} from './lib/window';
 // helper lib, provides exercise dependent prewritten Code
 import * as helper from './helper';
 import {
+    constructQuad,
     createBox,
     createBunny,
     createKnot,
@@ -36,7 +37,7 @@ function callback(changed: utils.KeyValuePair<helper.Settings>) {
                     rendered_model.geometry = createSphere()
                     break;
                 case Geometries.quad:
-                    rendered_model.geometry = new PlaneGeometry()
+                    rendered_model.geometry = constructQuad();
                     break
                 case Geometries.box:
                     rendered_model.geometry = createBox()
@@ -118,7 +119,7 @@ function main() {
     // create scene
     scene = new THREE.Scene();
     initTextures()
-    const geometry = new PlaneGeometry()
+    const geometry = constructQuad()
     var material = new THREE.RawShaderMaterial({
         vertexShader: basicVertexShader,
         fragmentShader: basicFragmentShader,
