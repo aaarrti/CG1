@@ -2,7 +2,7 @@
 // @ts-ignore
 
 import * as THREE from 'three';
-import {PlaneGeometry, RawShaderMaterial} from 'three';
+import {CanvasTexture, RawShaderMaterial} from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls';
 import basicVertexShader from "./shaders/vertex_shader.glsl";
 import basicFragmentShader from "./shaders/fragment_shader.glsl";
@@ -62,19 +62,15 @@ function callback(changed: utils.KeyValuePair<helper.Settings>) {
             })
             break;
         case "shader":
-
             break;
         case "environment":
-
             break;
         case "normalmap":
-
             break;
         default:
             break;
     }
 }
-
 
 
 var imageWidget: ImageWidget;
@@ -104,6 +100,11 @@ function main() {
     // and it triggers the event "updated" while drawing
     imageWidget = new ImageWidget(textureDiv);
     imageWidget.setImage('textures/earth.jpg')
+    imageWidget.enableDrawing()
+    settings.pen = () => {
+        imageWidget.clearDrawing()
+    }
+
 
     // ---------------------------------------------------------------------------
     // create RenderDiv
@@ -124,11 +125,17 @@ function main() {
         vertexShader: basicVertexShader,
         fragmentShader: basicFragmentShader,
         uniforms: {
-            sampler: {value: selectTexture(Textures.earth)}
+            sampler: {value: selectTexture(Textures.earth)},
+            drawing: {value: new CanvasTexture(imageWidget.getDrawingCanvas())}
         }
     })
     rendered_model = new THREE.Mesh(geometry, material)
-    scene.add(rendered_model)
+    scene.add(rendered_model);
+    imageWidget.postDrawHook = () => (rendered_model.material as RawShaderMaterial).uniforms['drawing'] =
+        {value: new CanvasTexture(imageWidget.getDrawingCanvas())};
+
+    imageWidget.postClearHook = () => (rendered_model.material as RawShaderMaterial).uniforms['drawing'] =
+        {value: new CanvasTexture(imageWidget.getDrawingCanvas())};
 
     // create camera
     let camera = new THREE.PerspectiveCamera();
