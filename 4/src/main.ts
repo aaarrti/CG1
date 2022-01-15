@@ -24,7 +24,7 @@ import {
     initTextures,
     loadedTextures,
     mapShaderToInt,
-    selectImage,
+    selectImage, selectNormalMap,
     selectTexture,
     Shaders,
     Textures
@@ -76,6 +76,8 @@ function callback(changed: utils.KeyValuePair<helper.Settings>) {
             }
             break;
         case "normalmap":
+            let map = selectNormalMap(changed.value);
+            (rendered_model.material as RawShaderMaterial).uniforms.normal_map = {value: map};
             break;
         default:
             break;
@@ -139,7 +141,8 @@ function main() {
             drawing: {value: new CanvasTexture(imageWidget.getDrawingCanvas())},
             shader_type: {value: 0},
             shader_type_frag: {value: 0},
-            background: {value: null}
+            background: {value: null},
+            normal_map: {value: null},
         }
     })
     rendered_model = new THREE.Mesh(geometry, material)

@@ -21,6 +21,8 @@ in vec3 norm_interp;
 // = camera position in world space
 uniform vec3 cameraPosition;
 
+uniform sampler2D normal_map;
+
 
 
 void main(){
@@ -48,5 +50,26 @@ void main(){
         float u = (pi + atan(-1.* reflection.z, -1.* reflection.x)) / (2. * pi);
         float v = atan(sqrt((reflection.x)*(reflection.x) + (reflection.z)*(reflection.z)), reflection.y) / pi;
         fragColor = texture(background, vec2(u, v));
+    }
+
+    if (shader_type == 4){
+        // Normal map
+        vec4 color = texture(sampler, uv_interp);
+        vec4 ambient_light = 0.5 * color;
+
+        // Diffuse aka Lambert
+        vec3 vec_to_light = vec3(2., 2., 3.) - pos_interp;
+        // a dot b = |a||b| cos(gamma)
+        float cos_gamma = dot(vec_to_light, norm_interp) / (length(vec_to_light) * length(norm_interp));
+        // cos(0) = 1, cos(pi/2) = 0
+        vec4 diffuse_light;
+        if (cos_gamma > 0.){
+            diffuse_light = color * cos_gamma * 0.5;
+        } else {
+            diffuse_light = vec4(0., 0., 0., 0.);
+        }
+        //fragColor = ambient_light;
+        //fragColor = diffuse_light;
+        fragColor = ambient_light + diffuse_light;
     }
 }

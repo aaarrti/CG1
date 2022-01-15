@@ -6,7 +6,7 @@ import * as dat from 'dat.gui';
 // local from us provided utilities
 import * as utils from './lib/utils';
 import bunny from './models/bunny.obj';
-import {Float32BufferAttribute, Uint16BufferAttribute} from "three";
+import {BufferGeometry, BufferGeometryUtils, Float32BufferAttribute, Uint16BufferAttribute} from "three";
 
 
 /*******************************************************************************
@@ -143,6 +143,8 @@ export function loadTexture(name: string) {
 
 // @ts-ignore
 export var loadedTextures;
+// @ts-ignore
+export var loadedNormalMaps;
 
 export function initTextures() {
     loadedTextures = {
@@ -156,6 +158,14 @@ export function initTextures() {
         wood: loadTexture('wood_ceiling'),
         lava: loadTexture('lava'),
         indoor: loadTexture('indoor')
+    }
+
+    loadedNormalMaps = {
+        terracotta: loadTexture('terracotta_normals'),
+        plastic: loadTexture('plastic_normals'),
+        wood: loadTexture('wood_ceiling_normals'),
+        lava: loadTexture('lava_normals'),
+        rock: loadTexture('rock_normals')
     }
 }
 
@@ -189,12 +199,14 @@ export function constructQuad(): THREE.BufferGeometry {
     const geo = new THREE.BufferGeometry()
     geo.setAttribute('position', new Float32BufferAttribute([-0.5, 0.5, 0., 0.5, 0.5, 0., -0.5, -0.5, 0, 0.5, -0.5, 0.], 3))
     geo.setAttribute('uv', new Float32BufferAttribute([0., 1., 1., 1., 0., 0., 1., 0.], 2))
+    geo.setAttribute('normal', new Float32BufferAttribute([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1], 3))
     geo.setIndex(new Uint16BufferAttribute([0, 2, 1, 2, 3, 1], 1))
     return geo;
 }
 
-export function mapShaderToInt(shader: Shaders){
-    switch (shader){
+
+export function mapShaderToInt(shader: Shaders) {
+    switch (shader) {
         case Shaders.uv:
             return 0;
         case Shaders.spherical:
@@ -203,5 +215,26 @@ export function mapShaderToInt(shader: Shaders){
             return 2;
         case Shaders.envMapping:
             return 3;
+        case Shaders.normalmap:
+            return 4;
     }
+}
+
+export function selectNormalMap(map: NormalMaps): Textures {
+    switch (map) {
+        case NormalMaps.lava_normals:
+            return loadedNormalMaps.lava;
+        case NormalMaps.plastic_normals:
+            return loadedNormalMaps.plastic;
+        case NormalMaps.rock_normals:
+            return loadedNormalMaps.rock;
+        case NormalMaps.terracotta_normals:
+            return loadedNormalMaps.terracotta;
+        case NormalMaps.wood_ceiling_normals:
+            return loadedNormalMaps.wood;
+        case NormalMaps.uniform_normals:
+            // @ts-ignore
+            return null;
+    }
+
 }
