@@ -63,6 +63,7 @@ export default class ImageWidget {
             ctx.stroke();
             ctx.closePath();
         }
+        this.postDrawHook()
     }
 
     findxy(res: string, e: MouseEvent) {
@@ -115,6 +116,7 @@ export default class ImageWidget {
             var event = new CustomEvent('updated');
             this.DrawingCanvas.dispatchEvent(event);
         }
+        this.postClearHook()
     }
 
     enableDrawing() {
@@ -131,5 +133,13 @@ export default class ImageWidget {
 
     getDrawingCanvas() {
         return this.DrawingCanvas;
+    }
+
+    public postDrawHook() {
+
+    }
+
+    public postClearHook() {
+
     }
 }

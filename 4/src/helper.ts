@@ -192,3 +192,16 @@ export function constructQuad(): THREE.BufferGeometry {
     geo.setIndex(new Uint16BufferAttribute([0, 2, 1, 2, 3, 1], 1))
     return geo;
 }
+
+export function mapShaderToInt(shader: Shaders){
+    switch (shader){
+        case Shaders.uv:
+            return 0;
+        case Shaders.spherical:
+            return 1;
+        case Shaders.fixSpherical:
+            return 2;
+        case Shaders.envMapping:
+            return 3;
+    }
+}

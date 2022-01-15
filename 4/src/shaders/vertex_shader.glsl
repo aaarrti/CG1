@@ -29,10 +29,12 @@ in vec3 normal;
 in vec2 uv;
 
 out vec2 uv_interp;
+out vec3 pos_interp;
 
 
 void main(){
     // predifined out var
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
     uv_interp = uv;
+    pos_interp = position;
 }

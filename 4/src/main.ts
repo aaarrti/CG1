@@ -21,7 +21,7 @@ import {
     createKnot,
     createSphere,
     Geometries,
-    initTextures,
+    initTextures, mapShaderToInt,
     selectImage,
     selectTexture,
     Textures
@@ -51,17 +51,11 @@ function callback(changed: utils.KeyValuePair<helper.Settings>) {
             }
             break;
         case "texture":
-            imageWidget.setImage(selectImage(changed.value))
-            // @ts-ignore
-            rendered_model.material = new RawShaderMaterial({
-                vertexShader: basicVertexShader,
-                fragmentShader: basicFragmentShader,
-                uniforms: {
-                    sampler: {value: selectTexture(changed.value)}
-                }
-            })
+            imageWidget.setImage(selectImage(changed.value));
+            (rendered_model.material as RawShaderMaterial).uniforms.sampler = {value: selectTexture(changed.value)}
             break;
         case "shader":
+            (rendered_model.material as RawShaderMaterial).uniforms.shader_type = {value: mapShaderToInt(changed.value)}
             break;
         case "environment":
             break;
@@ -126,16 +120,19 @@ function main() {
         fragmentShader: basicFragmentShader,
         uniforms: {
             sampler: {value: selectTexture(Textures.earth)},
-            drawing: {value: new CanvasTexture(imageWidget.getDrawingCanvas())}
+            drawing: {value: new CanvasTexture(imageWidget.getDrawingCanvas())},
+            shader_type: {value: 0}
         }
     })
     rendered_model = new THREE.Mesh(geometry, material)
     scene.add(rendered_model);
-    imageWidget.postDrawHook = () => (rendered_model.material as RawShaderMaterial).uniforms['drawing'] =
-        {value: new CanvasTexture(imageWidget.getDrawingCanvas())};
+    imageWidget.postDrawHook = () => (rendered_model.material as RawShaderMaterial).uniforms['drawing'] = {
+        value: new CanvasTexture(imageWidget.getDrawingCanvas())
+    };
 
-    imageWidget.postClearHook = () => (rendered_model.material as RawShaderMaterial).uniforms['drawing'] =
-        {value: new CanvasTexture(imageWidget.getDrawingCanvas())};
+    imageWidget.postClearHook = () => (rendered_model.material as RawShaderMaterial).uniforms['drawing'] = {
+        value: new CanvasTexture(imageWidget.getDrawingCanvas())
+    };
 
     // create camera
     let camera = new THREE.PerspectiveCamera();
