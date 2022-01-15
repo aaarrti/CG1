@@ -21,9 +21,12 @@ import {
     createKnot,
     createSphere,
     Geometries,
-    initTextures, mapShaderToInt,
+    initTextures,
+    loadedTextures,
+    mapShaderToInt,
     selectImage,
     selectTexture,
+    Shaders,
     Textures
 } from './helper';
 import ImageWidget from './imageWidget';
@@ -57,8 +60,20 @@ function callback(changed: utils.KeyValuePair<helper.Settings>) {
         case "shader":
             (rendered_model.material as RawShaderMaterial).uniforms.shader_type = {value: mapShaderToInt(changed.value)};
             (rendered_model.material as RawShaderMaterial).uniforms.shader_type_frag = {value: mapShaderToInt(changed.value)};
+            if (changed.value === Shaders.envMapping) {
+                //(rendered_model.material as RawShaderMaterial).uniforms.sampler = {value: scene.background}
+            }
             break;
         case "environment":
+            if (changed.value) {
+                let backgr = loadedTextures.indoor;
+                backgr.mapping = THREE.EquirectangularReflectionMapping;
+                scene.background = backgr;
+                (rendered_model.material as RawShaderMaterial).uniforms.background = {value: backgr};
+            } else {
+                scene.background = null;
+                (rendered_model.material as RawShaderMaterial).uniforms.background = {value: null};
+            }
             break;
         case "normalmap":
             break;
@@ -123,7 +138,8 @@ function main() {
             sampler: {value: selectTexture(Textures.earth)},
             drawing: {value: new CanvasTexture(imageWidget.getDrawingCanvas())},
             shader_type: {value: 0},
-            shader_type_frag: {value: 0}
+            shader_type_frag: {value: 0},
+            background: {value: null}
         }
     })
     rendered_model = new THREE.Mesh(geometry, material)

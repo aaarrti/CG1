@@ -32,6 +32,7 @@ in vec2 uv;
 out vec2 uv_interp;
 out vec3 pos_interp;
 out vec2 uv_calc_interp;
+out vec3 norm_interp;
 
 uniform int shader_type_frag;
 
@@ -40,6 +41,7 @@ void main(){
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
     uv_interp = uv;
     pos_interp = position;
+    norm_interp = normal;
 
     if (shader_type_frag == 1){
         // Spherical

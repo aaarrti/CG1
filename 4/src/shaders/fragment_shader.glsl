@@ -10,11 +10,16 @@ in vec2 uv_interp;
 
 uniform sampler2D sampler;
 uniform sampler2D drawing;
+uniform sampler2D background;
 
 uniform int shader_type;
 in vec3 pos_interp;
 
 in vec2 uv_calc_interp;
+in vec3 norm_interp;
+
+// = camera position in world space
+uniform vec3 cameraPosition;
 
 
 
@@ -35,5 +40,13 @@ void main(){
         float v = atan(sqrt((pos_interp.x)*(pos_interp.x) + (pos_interp.z)*(pos_interp.z)), -1.* pos_interp.y) / pi;
         fragColor = texture(sampler, vec2(u, v)) + texture(drawing, vec2(u, v));
 
+    }
+    if (shader_type == 3){
+        // Environmental map
+        vec3 view_direction = cameraPosition - pos_interp;
+        vec3 reflection = reflect(view_direction, norm_interp);
+        float u = (pi + atan(-1.* reflection.z, -1.* reflection.x)) / (2. * pi);
+        float v = atan(sqrt((reflection.x)*(reflection.x) + (reflection.z)*(reflection.z)), reflection.y) / pi;
+        fragColor = texture(background, vec2(u, v));
     }
 }
