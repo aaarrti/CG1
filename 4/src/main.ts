@@ -55,7 +55,8 @@ function callback(changed: utils.KeyValuePair<helper.Settings>) {
             (rendered_model.material as RawShaderMaterial).uniforms.sampler = {value: selectTexture(changed.value)}
             break;
         case "shader":
-            (rendered_model.material as RawShaderMaterial).uniforms.shader_type = {value: mapShaderToInt(changed.value)}
+            (rendered_model.material as RawShaderMaterial).uniforms.shader_type = {value: mapShaderToInt(changed.value)};
+            (rendered_model.material as RawShaderMaterial).uniforms.shader_type_frag = {value: mapShaderToInt(changed.value)};
             break;
         case "environment":
             break;
@@ -121,7 +122,8 @@ function main() {
         uniforms: {
             sampler: {value: selectTexture(Textures.earth)},
             drawing: {value: new CanvasTexture(imageWidget.getDrawingCanvas())},
-            shader_type: {value: 0}
+            shader_type: {value: 0},
+            shader_type_frag: {value: 0}
         }
     })
     rendered_model = new THREE.Mesh(geometry, material)
