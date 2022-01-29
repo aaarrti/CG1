@@ -12,7 +12,7 @@ export class Settings extends utils.Callbackable {
   subsamples: number = 1;
   width: number = 256;
   height: number = 256;
-  correctSpheres: boolean = false;
+  correctSpheres: boolean = true;
   phong: boolean = false;
   alllights: boolean = false;
   shadows: boolean = false;
