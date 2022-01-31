@@ -13,7 +13,7 @@ export class Settings extends utils.Callbackable {
   width: number = 256;
   height: number = 256;
   correctSpheres: boolean = true;
-  phong: boolean = false;
+  phong: boolean = true;
   alllights: boolean = false;
   shadows: boolean = false;
   mirrors: boolean = false;
@@ -170,8 +170,10 @@ export function setupLight(scene: THREE.Scene) {
   scene.add(light3);
   lights.push(light3);
   light3.updateMatrixWorld();
+  light3.name = 'main_light';
   return lights;
 };
+
 
 export function setupCamera(camera: THREE.PerspectiveCamera) {
   camera.fov = 60;

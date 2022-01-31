@@ -3,10 +3,13 @@ import { CanvasWidget } from "./canvasWidget";
 import * as helper from "./helper";
 import { Application, createWindow } from "./lib/window";
 import {
+    Camera,
+    Color, Matrix4,
     Mesh,
     MeshPhongMaterial,
     Object3D,
     PerspectiveCamera,
+    PointLight,
     Raycaster,
     Scene,
     SphereGeometry,
@@ -38,6 +41,13 @@ function callback(changed: KeyValuePair<helper.Settings>) {
         case "correctSpheres":
             console.log(`Correct spheres ${changed.value ? "enabled" : "disabled"}`);
             break;
+        case "phong":
+            console.log(`Phong with single light source ${changed.value ? "enabled" : "disabled"}`);
+            break;
+        case 'alllights':
+            console.log(`All light sources ${changed.value ? "enabled" : "disabled"}`);
+            break;
+
     }
 }
 
@@ -53,14 +63,100 @@ function raycast() {
             // Expects coordinates in [-1, 1]
             raycaster.setFromCamera(target, camera);
             const intersections = listIntersections(raycaster);
-            if (intersections.length > 0) {
-                const intersection_color = ((intersections[0].object as Mesh).material as MeshPhongMaterial).color;
+            if (intersections.length === 0) {
+                continue;
+            }
+            if (!settings.phong) {
+                const color = ((intersections[0].object as Mesh).material as MeshPhongMaterial).color;
                 // Expects coordinates in [0, 256]
-                canvasWidget.setPixel(x, y, intersection_color);
+                canvasWidget.setPixel(x, y, color);
+            }
+            if (settings.phong && !settings.alllights) {
+                setPhongColorSingleSource(x, y, intersections[0]);
+            }
+            if (settings.phong && settings.alllights) {
+                setPhongAllSources(x, y, intersections[0]);
             }
         }
     }
     console.log("Finished raycasting");
+
+}
+
+function setPhongColorSingleSource(x: number, y: number, intersection: Intersection) {
+    const light = scene.getObjectByName("main_light");
+    if (light === undefined) {
+        // never happens, nut TS complains about it
+        return;
+    }
+    const color = getPhongColorForLightSource(x, y, intersection, light as PointLight);
+    canvasWidget.setPixel(x, y, color);
+}
+
+function setPhongAllSources(x: number, y: number, intersection: Intersection) {
+    const lights: Array<PointLight> = [];
+    scene.traverse(obj => {
+        if (obj instanceof PointLight) {
+            lights.push(obj);
+        }
+    });
+    const colors_arr = lights.map(l => getPhongColorForLightSource(x, y, intersection, l));
+    const color = colors_arr[0].add(colors_arr[1]).add(colors_arr[2]).multiplyScalar(1/3.);
+    canvasWidget.setPixel(x, y, color);
+}
+
+
+function getPhongColorForLightSource(x: number, y: number, intersection: Intersection, light: PointLight) {
+    let normal = new Vector3();
+    // Use correct normals
+    if ((intersection.object as Mesh).geometry instanceof SphereGeometry) {
+        // For the spheres normalized vector between origin and intersection point
+        normal.copy(
+            new Vector3().copy(intersection.point).sub(intersection.object.position)
+        );
+    } else {
+        // For all others Intersection.face.normal
+        if (intersection.face) {
+            normal.copy(
+                new Vector3().copy(intersection.face.normal)
+                    .applyMatrix4(
+                        new Matrix4().copy(intersection.object.matrixWorld).invert().transpose()
+                    )
+            );
+
+        } else {
+            console.warn("intersection.face undefined");
+        }
+    }
+    let lightVector = new Vector3().copy(light.position).sub(intersection.point);
+    const light_intensity = new Color().copy((light as PointLight).color).multiplyScalar(4)
+        .multiplyScalar((light as PointLight).intensity)
+        .multiplyScalar(1. / (lightVector.length() ** 2));
+    const diffuse_reflectance = ((intersection.object as Mesh).material as MeshPhongMaterial).color;
+    let cos_theta = new Vector3()
+        .copy(lightVector).dot(normal) / (lightVector.length() * normal.length());
+    cos_theta = (cos_theta <= 0) ? 0 : cos_theta;
+    const diffuse_component = new Color(
+        light_intensity.r * diffuse_reflectance.r,
+        light_intensity.g * diffuse_reflectance.g,
+        light_intensity.b * diffuse_reflectance.b
+    )
+    .multiplyScalar(cos_theta)
+
+    const viewDirection = new Vector3().copy(camera.position).sub(intersection.object.position)
+    const bisector = new Vector3().copy(viewDirection).add(lightVector)
+        .multiplyScalar(1/(new Vector3().copy(viewDirection).add(lightVector).length()));
+    let cos_gamma = bisector.dot(normal);
+    const shininess = ((intersection.object as Mesh).material as MeshPhongMaterial).shininess
+    cos_gamma = (cos_gamma <= 0)? 0: cos_gamma**shininess
+    const specular_component = new Color(
+        light_intensity.r * diffuse_reflectance.r,
+        light_intensity.g * diffuse_reflectance.g,
+        light_intensity.b * diffuse_reflectance.b
+    ).multiplyScalar(cos_gamma)
+
+    return diffuse_component
+        .add(specular_component)
 }
 
 function listIntersections(raycaster: Raycaster) {
@@ -70,7 +166,7 @@ function listIntersections(raycaster: Raycaster) {
     var intersections: Array<Intersection> = [];
     scene.traverse(obj => {
         var intr = intersectObject(obj, raycaster);
-        if (intr !== undefined && intr.length > 0) {
+        if (intr.length > 0) {
             intersections = intersections.concat(intr);
         }
     });
@@ -78,7 +174,7 @@ function listIntersections(raycaster: Raycaster) {
     return intersections;
 }
 
-function intersectObject(object: Object3D, raycaster: Raycaster): Array<Intersection> | undefined {
+function intersectObject(object: Object3D, raycaster: Raycaster): Array<Intersection> {
     var mesh = object as Mesh;
     var geometry = mesh.geometry;
     if (!(geometry instanceof SphereGeometry)) {
@@ -112,6 +208,7 @@ function intersectObject(object: Object3D, raycaster: Raycaster): Array<Intersec
             { distance: dist2, point: point1, object: object }
         ];
     }
+    return [];
 }
 
 function main() {
@@ -131,7 +228,12 @@ function main() {
     let gui = helper.createGUI(settings);
     settings.addCallback(callback);
     settings.saveImg = () => canvasWidget.savePNG();
-    settings.render = raycast;
+    settings.render = () => {
+        var startTime = performance.now();
+        raycast();
+        var endTime = performance.now();
+        console.log(`Call to raycast() took ${endTime - startTime} miliseconds`);
+    };
 
     let rendererDiv = createWindow("renderer");
     root.appendChild(rendererDiv);
