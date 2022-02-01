@@ -14,8 +14,8 @@ export class Settings extends utils.Callbackable {
   height: number = 256;
   correctSpheres: boolean = true;
   phong: boolean = true;
-  alllights: boolean = true;
-  shadows: boolean = false;
+  alllights: boolean = false;
+  shadows: boolean = true;
   mirrors: boolean = false;
   render: () => void = function() {
   };

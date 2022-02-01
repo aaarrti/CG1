@@ -1,7 +1,7 @@
 // custom imports
-import { CanvasWidget } from './canvasWidget'
-import * as helper from './helper'
-import { Application, createWindow } from './lib/window'
+import { CanvasWidget } from "./canvasWidget";
+import * as helper from "./helper";
+import { Application, createWindow } from "./lib/window";
 import {
     Color,
     Mesh,
@@ -9,17 +9,18 @@ import {
     Object3D,
     PerspectiveCamera,
     PointLight,
+    Ray,
     Raycaster,
     Scene,
     SphereGeometry,
     Vector2,
     Vector3,
     WebGLRenderer
-} from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import RenderWidget from './lib/rendererWidget'
-import type { KeyValuePair } from './lib/utils'
-import type { Intersection } from 'three/src/core/Raycaster'
+} from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import RenderWidget from "./lib/rendererWidget";
+import type { KeyValuePair } from "./lib/utils";
+import type { Intersection } from "three/src/core/Raycaster";
 
 
 let canvasWidget: CanvasWidget
@@ -39,6 +40,10 @@ function addVectors(v1: Vector3, v2: Vector3) {
 
 function dot(v1: Vector3, v2: Vector3) {
     return new Vector3().copy(v1).dot(v2)
+}
+
+function scaleV(k: number, v: Vector3){
+    return new Vector3().copy(v).multiplyScalar(k);
 }
 
 function callback(changed: KeyValuePair<helper.Settings>) {
@@ -110,64 +115,65 @@ function listIntersections(raycaster: Raycaster) {
     return intersections
 }
 
+function solveQuadratic(a: number, b: number, c: number): Array<number> {
+    let discr = b * b - 4 * a * c;
+    if (discr < 0){
+        return [];
+    }
+    if (discr == 0){
+        return [- 0.5 * b / a]
+    }
+    let q = (b > 0) ? -0.5 * (b + Math.sqrt(discr)) : -0.5 * (b - Math.sqrt(discr))
+    let x0 = q / a
+    let x1 = c / q
+    return x0 > x1 ? [x0, x1] : [x1, x0]
+}
+
+function intersectSphere(ray: Ray, object: Mesh): Array<Vector3> {
+    // analytic solution
+    let L = subVectors(ray.origin, object.position)
+    let a = dot(ray.direction, ray.direction)
+    let b = 2 * dot(ray.direction, L)
+    //@ts-ignore
+    let c = dot(L, L) - object.geometry.parameters['radius']**2
+    let solutions = solveQuadratic(a, b, c)
+    return solutions.map(i => addVectors(ray.origin, scaleV(i, ray.direction.normalize())))
+}
+
 function intersectObject(object: Object3D, raycaster: Raycaster): Array<Intersection> {
     const mesh = object as Mesh
     const geometry = mesh.geometry
-    if (!(geometry instanceof SphereGeometry)) {
-        return raycaster.intersectObject(object, false)
+    if (geometry instanceof SphereGeometry) {
+        let sphere_intersections = intersectSphere(raycaster.ray, mesh);
+        return sphere_intersections.map(i => mapPointToIntersetion(i, mesh, raycaster.ray.origin))
     }
-    // https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
-    // geometry parameters
-    const R = geometry.parameters['radius']
-    const C = mesh.position.clone()
-    const D = raycaster.ray.direction.clone()
-    const O = raycaster.ray.origin.clone()
-    // quadratic equation parameters
-    const a = dot(D, D)
-    const b = 2. * dot(D, subVectors(O, C))
-    const c = (subVectors(O, C).length() ** 2) - (R ** 2)
-    const delta = (b ** 2) - (4. * a * c)
-    if (delta == 0) {
-        // 1 intersection
-        const x = -b / (2. * a)
-        const point = addVectors(O, D.clone().multiplyScalar(x))
-        const dist = subVectors(point, O).length()
-        return [{ distance: dist, point: point, object: object }]
-    }
-    if (delta > 0) {
-        const x1 = (-b + Math.sqrt(delta)) / (2. * a)
-        const x2 = (-b - Math.sqrt(delta)) / (2. * a)
-        const point1 = addVectors(O, D.multiplyScalar(x1))
-        const dist1 = subVectors(O, point1).length()
-        const point2 = addVectors(O, D.multiplyScalar(x2))
-        const dist2 = subVectors(O, point2).length()
-        return [
-            { distance: dist1, point: point1, object: object },
-            { distance: dist2, point: point2, object: object }
-        ]
-    }
-    return []
+    return raycaster.intersectObject(object, false)
+}
+
+function mapPointToIntersetion(point_int: Vector3, mesh: Mesh, ray_origin: Vector3): Intersection {
+    let distance_ = ray_origin.distanceTo(point_int)
+    return {distance: distance_, point: point_int, object: mesh}
 }
 
 function setPhongColorSingleSource(x: number, y: number, intersection: Intersection) {
-    const color = getPhongColorForLightSource(x, y, intersection, lights[0])
+    const color = getPhongColorForLightSource(intersection, lights[0])
     canvasWidget.setPixel(x, y, color)
 }
 
 function setPhongAllSources(x: number, y: number, intersection: Intersection) {
-    const colors_arr = lights.map(l => getPhongColorForLightSource(x, y, intersection, l))
+    const colors_arr = lights.map(l => getPhongColorForLightSource(intersection, l))
     const color = colors_arr[0].add(colors_arr[1]).add(colors_arr[2])
     canvasWidget.setPixel(x, y, color)
 }
 
 
-function getPhongColorForLightSource(x: number, y: number, intersection: Intersection, light: PointLight) {
+function getPhongColorForLightSource(intersection: Intersection, light: PointLight) {
     let normal
     const mesh = intersection.object as Mesh
     // Use correct normals
     if (mesh.geometry instanceof SphereGeometry && settings.correctSpheres) {
         // For the spheres normalized vector between origin and intersection point
-        normal = subVectors(intersection.object.position, intersection.point).normalize()
+        normal = subVectors(intersection.point, intersection.object.position).normalize()
     } else {
         // @ts-ignore
         normal = intersection.face.normal.clone()
@@ -176,33 +182,35 @@ function getPhongColorForLightSource(x: number, y: number, intersection: Interse
             )
             .normalize()
     }
+    if(settings.shadows){
+        let shadowRay = new Raycaster(intersection.point, light.position)
+        let shadows = listIntersections(shadowRay);
+        if(shadows.length > 0){
+            return new Color('black');
+        }
+    }
     let lightVector = subVectors(light.position, intersection.point).normalize()
-    const light_intensity = new Color(light.color)
-        .multiplyScalar(light.intensity)
-        .multiplyScalar(1. / (lightVector.length() ** 2))
-    const diffuse_reflectance = (mesh.material as MeshPhongMaterial).color
+    const reflectance = (mesh.material as MeshPhongMaterial).color
+    const light_intensity = new Color(light.color).multiplyScalar(light.intensity).multiplyScalar(1. / (lightVector.length() ** 2))
+    const diffuse_component = getDiffuseComponent(light, intersection, mesh, normal, lightVector, light_intensity, reflectance);
+    const specular_component = getSpecularComponent(intersection, mesh, normal, lightVector, light_intensity, reflectance)
+    return diffuse_component.add(specular_component)
+}
+
+function getDiffuseComponent(light: PointLight, intersection: Intersection, mesh: Mesh, normal: Vector3, lightVector: Vector3, light_intensity: Color, reflectance: Color): Color {
     let cos_theta = dot(lightVector, normal)
     cos_theta = (cos_theta <= 0) ? 0 : cos_theta
+    return new Color(light_intensity.r * reflectance.r, light_intensity.g * reflectance.g, light_intensity.b * reflectance.b).multiplyScalar(cos_theta);
+}
 
-    const diffuse_component = new Color(
-        light_intensity.r * diffuse_reflectance.r,
-        light_intensity.g * diffuse_reflectance.g,
-        light_intensity.b * diffuse_reflectance.b
-    ).multiplyScalar(cos_theta)
-
+function getSpecularComponent(intersection: Intersection, mesh: Mesh, normal: Vector3, lightVector: Vector3, light_intensity: Color, reflectance: Color): Color {
     const viewDirection = subVectors(intersection.point, camera.position).normalize()
     const reflection = lightVector.clone().reflect(normal).normalize()
 
     let cos_gamma = dot(viewDirection, reflection)
     const shininess = (mesh.material as MeshPhongMaterial).shininess
     cos_gamma = cos_gamma <= 0 ? 0 : cos_gamma ** shininess
-    const specular_component = new Color(
-        light_intensity.r * diffuse_reflectance.r,
-        light_intensity.g * diffuse_reflectance.g,
-        light_intensity.b * diffuse_reflectance.b
-    ).multiplyScalar(cos_gamma).multiplyScalar(shininess / 50.)
-
-    return diffuse_component.add(specular_component)
+    return new Color(light_intensity.r * reflectance.r, light_intensity.g * reflectance.g, light_intensity.b * reflectance.b).multiplyScalar(cos_gamma).multiplyScalar(shininess / 50.)
 }
 
 function main() {
