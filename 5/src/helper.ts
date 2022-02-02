@@ -8,7 +8,7 @@ import * as dat from "dat.gui";
  ******************************************************************************/
 
 export class Settings extends utils.Callbackable {
-  maxDepth: number = 2;
+  maxDepth: number = 4;
   subsamples: number = 1;
   width: number = 256;
   height: number = 256;

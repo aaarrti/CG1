@@ -3,6 +3,7 @@ import { CanvasWidget } from "./canvasWidget";
 import * as helper from "./helper";
 import { Application, createWindow } from "./lib/window";
 import {
+    BoxGeometry,
     Color,
     Mesh,
     MeshPhongMaterial,
@@ -69,7 +70,9 @@ function callback(changed: KeyValuePair<helper.Settings>) {
             //@ts-ignore
             planeBack.material.mirror = changed.value
             break
-
+        case 'maxDepth':
+            console.log(`New max recursion depth ${changed.value}`);
+            break;
     }
 }
 
@@ -188,32 +191,40 @@ function getNormal(intersection: Intersection){
 }
 
 function getPhongColorMirrorAware(intersection: Intersection, light: PointLight, ray: Ray): Color {
-    let phong_color = getPhongColor(intersection, light);
-    if(!settings.mirrors){
-        return phong_color;
-    }
+    return settings.mirrors ? getPhongColorRecursively(intersection, light, ray, 1) : getPhongColor(intersection, light)
+}
+
+function getPhongColorRecursively(intersection: Intersection, light: PointLight, ray: Ray, depth: number): Color {
+    const phongColor = getPhongColor(intersection, light);
     //@ts-ignore
     if(!intersection.object.material.mirror){
-        return phong_color;
+        return phongColor;
+    }
+    if(depth === settings.maxDepth){
+        // this is a mirror but max depth is reached
+        // @ts-ignore
+        return phongColor.lerp(new Color('black'), intersection.object.material.reflectivity)
     }
     const normal = getNormal(intersection);
     const reflection_direction = ray.clone().direction.reflect(normal).normalize();
     const reflection_raycaster = new Raycaster(intersection.point, reflection_direction)
-    const reflection_intersections = listIntersections(reflection_raycaster);
-    if(reflection_intersections.length == 0){
-        return phong_color;
+    let reflection_intersections = listIntersections(reflection_raycaster);
+    reflection_intersections = reflection_intersections.filter(i => i.object !== intersection.object)
+    if(reflection_intersections.length === 0) {
+        // if nothing reflect
+        // @ts-ignore
+        return phongColor.lerp(new Color('black'), intersection.object.material.reflectivity)
     }
-    const reflection_color = getPhongColor(reflection_intersections[0], light);
-    //@ts-ignore
-    return phong_color.lerp(reflection_color, intersection.object.material.reflectivity)
-}
+    depth += 1
+    // @ts-ignore
+    return phongColor.lerp(getPhongColorRecursively(reflection_intersections[0], light, reflection_raycaster.ray, depth), intersection.object.material.reflectivity)
 
+}
 
 function getPhongColor(intersection: Intersection, light: PointLight) {
     let normal = getNormal(intersection);
     const mesh = intersection.object as Mesh
     // Use correct normals
-
     if(settings.shadows){
         let shadowRay = new Raycaster(intersection.point, subVectors(light.position, intersection.point).normalize())
         let shadows = listIntersections(shadowRay);
