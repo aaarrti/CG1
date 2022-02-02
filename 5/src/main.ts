@@ -96,7 +96,7 @@ function mapRayToColor(raycaster: Raycaster): Color {
         return ((intersections[0].object as Mesh).material as MeshPhongMaterial).color;
     }
     if (!settings.alllights) {
-        return getPhongColorMirrorAware(intersections[0], lights[0], raycaster.ray);
+        return getPhongColorMirrorAware(intersections[0], lights[1], raycaster.ray);
     }
     const colors_arr = lights.map(l => getPhongColorMirrorAware(intersections[0], l, raycaster.ray));
     return colors_arr[0].add(colors_arr[1]).add(colors_arr[2]);
