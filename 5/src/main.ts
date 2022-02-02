@@ -29,6 +29,7 @@ let camera: PerspectiveCamera
 let scene: Scene
 let renderer: WebGLRenderer
 let lights: Array<PointLight>
+let planeBack: Mesh
 
 function subVectors(v1: Vector3, v2: Vector3) {
     return new Vector3().subVectors(v1, v2)
@@ -63,6 +64,11 @@ function callback(changed: KeyValuePair<helper.Settings>) {
         case 'alllights':
             console.log(`All light sources ${changed.value ? 'enabled' : 'disabled'}`)
             break
+        case 'mirrors':
+            console.log(`Mirrors ${changed.value ? 'enabled' : 'disabled'}`)
+            //@ts-ignore
+            planeBack.material.mirror = changed.value
+            break
 
     }
 }
@@ -89,10 +95,10 @@ function raycast() {
                 canvasWidget.setPixel(x, y, color)
             }
             if (settings.phong && !settings.alllights) {
-                setPhongColorSingleSource(x, y, intersections[0])
+                setPhongColorSingleSourceMirrorAware(x, y, intersections[0], raycaster.ray)
             }
             if (settings.phong && settings.alllights) {
-                setPhongAllSources(x, y, intersections[0])
+                setPhongAllSourcesMirrorAware(x, y, intersections[0], raycaster.ray)
             }
         }
     }
@@ -155,22 +161,20 @@ function mapPointToIntersetion(point_int: Vector3, mesh: Mesh, ray_origin: Vecto
     return {distance: distance_, point: point_int, object: mesh}
 }
 
-function setPhongColorSingleSource(x: number, y: number, intersection: Intersection) {
-    const color = getPhongColorForLightSource(intersection, lights[1]).multiplyScalar(3)
+function setPhongColorSingleSourceMirrorAware(x: number, y: number, intersection: Intersection, ray: Ray) {
+    let color = getPhongColorMirrorAware(intersection, lights[1], ray).multiplyScalar(3)
     canvasWidget.setPixel(x, y, color)
 }
 
-function setPhongAllSources(x: number, y: number, intersection: Intersection) {
-    const colors_arr = lights.map(l => getPhongColorForLightSource(intersection, l))
+function setPhongAllSourcesMirrorAware(x: number, y: number, intersection: Intersection, ray: Ray) {
+    const colors_arr = lights.map(l => getPhongColorMirrorAware(intersection, l, ray))
     const color = colors_arr[0].add(colors_arr[1]).add(colors_arr[2])
     canvasWidget.setPixel(x, y, color)
 }
 
-
-function getPhongColorForLightSource(intersection: Intersection, light: PointLight) {
+function getNormal(intersection: Intersection){
     let normal
     const mesh = intersection.object as Mesh
-    // Use correct normals
     if (mesh.geometry instanceof SphereGeometry && settings.correctSpheres) {
         // For the spheres normalized vector between origin and intersection point
         normal = subVectors(intersection.point, intersection.object.position).normalize()
@@ -180,6 +184,36 @@ function getPhongColorForLightSource(intersection: Intersection, light: PointLig
             .applyMatrix4(intersection.object.matrixWorld.clone().transpose().invert())
             .normalize()
     }
+    return normal;
+}
+
+function getPhongColorMirrorAware(intersection: Intersection, light: PointLight, ray: Ray): Color {
+    let phong_color = getPhongColor(intersection, light);
+    if(!settings.mirrors){
+        return phong_color;
+    }
+    //@ts-ignore
+    if(!intersection.object.material.mirror){
+        return phong_color;
+    }
+    const normal = getNormal(intersection);
+    const reflection_direction = ray.clone().direction.reflect(normal).normalize();
+    const reflection_raycaster = new Raycaster(intersection.point, reflection_direction)
+    const reflection_intersections = listIntersections(reflection_raycaster);
+    if(reflection_intersections.length == 0){
+        return phong_color;
+    }
+    const reflection_color = getPhongColor(reflection_intersections[0], light);
+    //@ts-ignore
+    return phong_color.lerp(reflection_color, intersection.object.material.reflectivity)
+}
+
+
+function getPhongColor(intersection: Intersection, light: PointLight) {
+    let normal = getNormal(intersection);
+    const mesh = intersection.object as Mesh
+    // Use correct normals
+
     if(settings.shadows){
         let shadowRay = new Raycaster(intersection.point, subVectors(light.position, intersection.point).normalize())
         let shadows = listIntersections(shadowRay);
@@ -196,6 +230,7 @@ function getPhongColorForLightSource(intersection: Intersection, light: PointLig
     const specular_component = getSpecularComponent(intersection, mesh, normal, lightVector, light_intensity, reflectance)
     return diffuse_component.add(specular_component)
 }
+
 
 function getDiffuseComponent(light: PointLight, intersection: Intersection, mesh: Mesh, normal: Vector3, lightVector: Vector3, light_intensity: Color, reflectance: Color): Color {
     let cos_theta = dot(lightVector, normal)
@@ -243,7 +278,9 @@ function main() {
         antialias: true  // to enable anti-alias and get smoother output
     })
     scene = new Scene()
-    scene = helper.setupGeometry(scene)
+    planeBack = helper.setupGeometry(scene)
+    //@ts-ignore
+    planeBack.material.mirror = settings.mirrors
     lights = helper.setupLight(scene)
     camera = new PerspectiveCamera()
     camera = helper.setupCamera(camera)

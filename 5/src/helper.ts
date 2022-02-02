@@ -16,7 +16,7 @@ export class Settings extends utils.Callbackable {
   phong: boolean = true;
   alllights: boolean = true;
   shadows: boolean = true;
-  mirrors: boolean = false;
+  mirrors: boolean = true;
   render: () => void = function() {
   };
   saveImg: () => void = function() {
@@ -147,7 +147,7 @@ export function setupGeometry(scene: THREE.Scene) {
   scene.add(planeright);
 
   scene.updateMatrixWorld();
-  return scene;
+  return planeback;
 };
 
 export function setupLight(scene: THREE.Scene) {
