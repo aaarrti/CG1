@@ -156,7 +156,7 @@ function mapPointToIntersetion(point_int: Vector3, mesh: Mesh, ray_origin: Vecto
 }
 
 function setPhongColorSingleSource(x: number, y: number, intersection: Intersection) {
-    const color = getPhongColorForLightSource(intersection, lights[0])
+    const color = getPhongColorForLightSource(intersection, lights[1]).multiplyScalar(3)
     canvasWidget.setPixel(x, y, color)
 }
 
@@ -177,14 +177,14 @@ function getPhongColorForLightSource(intersection: Intersection, light: PointLig
     } else {
         // @ts-ignore
         normal = intersection.face.normal.clone()
-            .applyMatrix4(
-                intersection.object.matrixWorld.clone().transpose().invert()
-            )
+            .applyMatrix4(intersection.object.matrixWorld.clone().transpose().invert())
             .normalize()
     }
     if(settings.shadows){
-        let shadowRay = new Raycaster(intersection.point, light.position)
+        let shadowRay = new Raycaster(intersection.point, subVectors(light.position, intersection.point).normalize())
         let shadows = listIntersections(shadowRay);
+        // spheres would intersect self
+        shadows = shadows.filter(i => i.object !== intersection.object)
         if(shadows.length > 0){
             return new Color('black');
         }
@@ -210,7 +210,8 @@ function getSpecularComponent(intersection: Intersection, mesh: Mesh, normal: Ve
     let cos_gamma = dot(viewDirection, reflection)
     const shininess = (mesh.material as MeshPhongMaterial).shininess
     cos_gamma = cos_gamma <= 0 ? 0 : cos_gamma ** shininess
-    return new Color(light_intensity.r * reflectance.r, light_intensity.g * reflectance.g, light_intensity.b * reflectance.b).multiplyScalar(cos_gamma).multiplyScalar(shininess / 50.)
+    return new Color(light_intensity.r * reflectance.r, light_intensity.g * reflectance.g, light_intensity.b * reflectance.b)
+        .multiplyScalar(cos_gamma).multiplyScalar(shininess/50)
 }
 
 function main() {
