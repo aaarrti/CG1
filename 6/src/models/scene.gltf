@@ -1,0 +1,396 @@
+{
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 2962,
+      "max": [
+        1.1472128629684448,
+        1.1472150087356567,
+        1.9017412662506104
+      ],
+      "min": [
+        -1.1472131013870239,
+        -1.1470284461975098,
+        -0.9951624870300293
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 35544,
+      "componentType": 5126,
+      "count": 2962,
+      "max": [
+        0.99993693828582764,
+        0.99993693828582764,
+        1
+      ],
+      "min": [
+        -0.99993693828582764,
+        -0.99993693828582764,
+        -1
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 17760,
+      "max": [
+        2961
+      ],
+      "min": [
+        0
+      ],
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 71088,
+      "componentType": 5126,
+      "count": 26364,
+      "max": [
+        6.2412590980529785,
+        31.832406997680664,
+        6.0204153060913086
+      ],
+      "min": [
+        -5.8029942512512207,
+        -2.9429793357849121e-07,
+        -6.0204029083251953
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 387456,
+      "componentType": 5126,
+      "count": 26364,
+      "max": [
+        0.99997681379318237,
+        1,
+        0.99999630451202393
+      ],
+      "min": [
+        -0.99997764825820923,
+        -1,
+        -0.99999624490737915
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 26364,
+      "max": [
+        0.99999934434890747,
+        0.99996697902679443,
+        0.99999791383743286,
+        1
+      ],
+      "min": [
+        -0.99999922513961792,
+        -0.59870827198028564,
+        -0.99998247623443604,
+        1
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 26364,
+      "max": [
+        0.979320228099823,
+        0.97164237499237061
+      ],
+      "min": [
+        0.0091776661574840546,
+        0.013091563247144222
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 71040,
+      "componentType": 5125,
+      "count": 150528,
+      "max": [
+        26363
+      ],
+      "min": [
+        0
+      ],
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "Chris (https://sketchfab.com/happycrust)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/models/f8a536bd4cd042afa1945083d69f17d9",
+      "title": "German Beer Bottle with Crown Cap"
+    },
+    "generator": "Sketchfab-3.19.5",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 673152,
+      "byteOffset": 0,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 210912,
+      "byteOffset": 673152,
+      "byteStride": 8,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 703824,
+      "byteOffset": 884064,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 421824,
+      "byteOffset": 1587888,
+      "byteStride": 16,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 2009712,
+      "uri": "scene.bin"
+    }
+  ],
+  "images": [
+    {
+      "uri": "textures/Bottle_baseColor.png"
+    },
+    {
+      "uri": "textures/Bottle_metallicRoughness.png"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "name": "Kronkorken",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.34282279900000001,
+          0.34282279900000001,
+          0.34282279900000001,
+          1
+        ],
+        "metallicFactor": 0.7410606153,
+        "roughnessFactor": 0.23196970619999999
+      }
+    },
+    {
+      "alphaMode": "BLEND",
+      "doubleSided": true,
+      "name": "Bottle",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "baseColorTexture": {
+          "index": 0,
+          "texCoord": 0
+        },
+        "metallicFactor": 0,
+        "metallicRoughnessTexture": {
+          "index": 1,
+          "texCoord": 0
+        },
+        "roughnessFactor": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Kronkorken.001_Kronkorken_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0
+          },
+          "indices": 2,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Bottle_fertig_Bottle_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 4,
+            "POSITION": 3,
+            "TANGENT": 5,
+            "TEXCOORD_0": 6
+          },
+          "indices": 7,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "name": "RootNode (gltf orientation matrix)",
+      "rotation": [
+        -0.70710678118654746,
+        -0,
+        -0,
+        0.70710678118654757
+      ]
+    },
+    {
+      "children": [
+        2
+      ],
+      "name": "RootNode (model correction matrix)"
+    },
+    {
+      "children": [
+        3
+      ],
+      "matrix": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "name": "9a781d5c81c7488ba3f46b0d2269141c.fbx"
+    },
+    {
+      "children": [
+        4,
+        6
+      ],
+      "name": "RootNode"
+    },
+    {
+      "children": [
+        5
+      ],
+      "matrix": [
+        -10.210444071237175,
+        -1.5625537924598241e-08,
+        -1.7843451104723542,
+        -0,
+        -1.7843451104721801,
+        -4.4921592918215269e-06,
+        10.210444071236218,
+        -0,
+        1.2734541654115604e-07,
+        -1.6735705137251236,
+        -7.1404506138116932e-07,
+        -0,
+        54.999385833740234,
+        2.8935205936431885,
+        -16.593715667724609,
+        1
+      ],
+      "name": "Kronkorken.001"
+    },
+    {
+      "mesh": 0,
+      "name": "Kronkorken.001_Kronkorken_0"
+    },
+    {
+      "children": [
+        7
+      ],
+      "matrix": [
+        4.9996410086013388,
+        8.139195751345191e-15,
+        -0.55390332291764677,
+        0,
+        9.0242316315801851e-08,
+        5.0302305221556951,
+        8.1454507968851469e-07,
+        0,
+        0.55390332291763933,
+        -8.1952874415654855e-07,
+        4.999641008601273,
+        0,
+        -9.6394243240356445,
+        0,
+        -4.0095944404602051,
+        1
+      ],
+      "name": "Bottle_fertig"
+    },
+    {
+      "mesh": 1,
+      "name": "Bottle_fertig_Bottle_0"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "OSG_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    }
+  ]
+}
+
